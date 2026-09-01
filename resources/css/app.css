@@ -1,0 +1,62 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    body {
+        @apply bg-surface text-ink antialiased dark:bg-boxdark dark:text-gray-200;
+        font-family: 'Outfit', ui-sans-serif, system-ui, sans-serif;
+    }
+}
+
+@layer components {
+    /* ---- Cards ---- */
+    .ta-card {
+        @apply rounded-2xl border border-line bg-white shadow-card
+               dark:border-strokedark dark:bg-boxdark2;
+    }
+
+    /* ---- Sidebar nav links ---- */
+    .ta-nav-link {
+        @apply flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium
+               text-gray-300 transition-colors duration-150 hover:bg-white/5 hover:text-white;
+    }
+    .ta-nav-link.active {
+        @apply bg-brand text-white hover:bg-brand hover:text-white;
+    }
+    .ta-nav-sub {
+        @apply flex items-center gap-3 rounded-lg px-3 py-2 text-[13px] font-medium
+               text-gray-400 transition-colors hover:text-white;
+    }
+    .ta-nav-sub.active { @apply text-white; }
+
+    /* ---- Buttons ---- */
+    .btn { @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5
+                  text-sm font-medium transition-colors duration-150 focus:outline-none
+                  focus:ring-2 focus:ring-brand/40 disabled:opacity-60; }
+    .btn-primary { @apply bg-brand text-white hover:bg-brand-600; }
+    .btn-light   { @apply border border-line bg-white text-ink hover:bg-surface
+                          dark:border-strokedark dark:bg-boxdark2 dark:text-gray-200 dark:hover:bg-boxdark; }
+    .btn-danger  { @apply bg-danger text-white hover:opacity-90; }
+
+    /* ---- Form controls ---- */
+    .ta-input {
+        @apply w-full rounded-lg border border-line bg-white px-4 py-2.5 text-sm text-ink
+               placeholder:text-muted focus:border-brand focus:ring-brand/30
+               dark:border-strokedark dark:bg-boxdark dark:text-gray-200;
+    }
+    .ta-label { @apply mb-1.5 block text-sm font-medium text-ink dark:text-gray-300; }
+
+    /* ---- Badges ---- */
+    .ta-badge { @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold; }
+
+    /* ---- Tables ---- */
+    .ta-th { @apply px-5 py-3 text-left text-xs font-medium uppercase tracking-wide text-muted; }
+    .ta-td { @apply px-5 py-4 text-sm text-ink dark:text-gray-300; }
+}
+
+/* Custom scrollbar for the sidebar */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
