@@ -73,7 +73,7 @@ class OrderController extends Controller implements HasMiddleware
             'order'    => new Order([
                 'order_status'            => OrderStatus::New,
                 'payment_status'          => PaymentStatus::Pending,
-                'requested_delivery_date' => today()->addDays(7),
+                'requested_delivery_date' => today()->addDay(),
             ]),
             'customer' => $customer,
         ]);
@@ -219,6 +219,9 @@ class OrderController extends Controller implements HasMiddleware
      */
     public function lookupCustomer(Request $request)
     {
+        // Release session lock immediately so concurrent browser requests don't block
+        session()->save();
+
         $customer = Customer::findByPhone($request->query('phone'));
 
         if (! $customer) {
@@ -232,7 +235,8 @@ class OrderController extends Controller implements HasMiddleware
             ->get()
             ->map(fn ($o) => [
                 'id'                      => $o->id,
-                'order_number'            => $o->order_number,
+                'order_number'            => $o->display_number,
+                'raw_order_number'        => $o->order_number,
                 'created_at'              => $o->order_created_at?->format('d M Y h:i A') ?? $o->created_at?->format('d M Y h:i A'),
                 'requested_delivery_date' => $o->requested_delivery_date?->format('d M Y'),
                 'order_status'            => $o->order_status->label(),
@@ -275,6 +279,9 @@ class OrderController extends Controller implements HasMiddleware
     /** Typeahead over the customer list for the order form. */
     public function searchCustomers(Request $request)
     {
+        // Release session lock immediately so concurrent browser requests don't block
+        session()->save();
+
         $customers = Customer::search($request->query('q'))
             ->orderBy('name')
             ->limit(15)

@@ -22,13 +22,13 @@
 @endphp
 
 <div x-data="{ custom: {{ $range['preset'] === 'custom' ? 'true' : 'false' }}, openMenu: false }"
-     {{ $attributes->merge(['class' => 'rounded-2xl border border-line bg-white p-3 sm:p-4 shadow-xs dark:border-strokedark dark:bg-boxdark']) }}>
+     {{ $attributes->merge(['class' => 'rounded-2xl border border-line bg-white p-4 sm:p-5 shadow-xs dark:border-strokedark dark:bg-boxdark']) }}>
 
     {{-- Main Bar --}}
     <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         
         {{-- Left: Desktop Quick Buttons & Mobile Native/Custom Dropdown --}}
-        <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
+        <div class="flex flex-wrap items-center gap-2">
             
             {{-- Mobile Dropdown Selector (Visible on mobile only) --}}
             <div class="w-full sm:hidden">
@@ -52,10 +52,10 @@
             </div>
 
             {{-- Desktop Primary Quick Pills (Hidden on mobile) --}}
-            <div class="hidden sm:flex items-center gap-1.5 rounded-xl bg-surface/60 p-1 border border-line/60 dark:border-strokedark dark:bg-boxdark2">
+            <div class="hidden sm:flex items-center gap-1.5 rounded-xl bg-surface/80 p-1 border border-line/70 dark:border-strokedark dark:bg-boxdark2">
                 @foreach ($mainPresets as $key => $label)
                     <a href="{{ request()->fullUrlWithQuery(['range' => $key, 'from' => null, 'to' => null, 'page' => null]) }}"
-                       class="rounded-lg px-3 py-1 text-xs font-semibold transition
+                       class="rounded-lg px-3.5 py-1.5 text-xs font-semibold transition
                               {{ $range['preset'] === $key
                                   ? 'bg-brand text-white shadow-xs'
                                   : 'text-muted hover:text-ink dark:text-gray-300 dark:hover:text-white' }}">
@@ -66,7 +66,7 @@
                 {{-- More Presets Dropdown --}}
                 <div class="relative" x-data="{ open: false }">
                     <button type="button" @click="open = !open" @click.outside="open = false"
-                            class="inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-semibold transition
+                            class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition
                                    {{ $isMoreActive
                                        ? 'bg-brand text-white shadow-xs'
                                        : 'text-muted hover:text-ink dark:text-gray-300 dark:hover:text-white' }}">
@@ -75,10 +75,10 @@
                     </button>
 
                     <div x-show="open" x-cloak x-transition
-                         class="absolute left-0 mt-1 z-50 w-44 rounded-xl border border-line bg-white p-1 shadow-xl dark:border-strokedark dark:bg-boxdark">
+                         class="absolute left-0 mt-1 z-50 w-44 rounded-xl border border-line bg-white p-1.5 shadow-xl dark:border-strokedark dark:bg-boxdark">
                         @foreach ($morePresets as $key => $label)
                             <a href="{{ request()->fullUrlWithQuery(['range' => $key, 'from' => null, 'to' => null, 'page' => null]) }}"
-                               class="flex w-full items-center justify-between rounded-lg px-3 py-1.5 text-xs font-medium transition
+                               class="flex w-full items-center justify-between rounded-lg px-3 py-2 text-xs font-medium transition
                                       {{ $range['preset'] === $key ? 'bg-brand/10 text-brand font-bold' : 'text-ink hover:bg-surface dark:text-gray-200 dark:hover:bg-boxdark2' }}">
                                 <span>{{ $label }}</span>
                                 @if ($range['preset'] === $key)
@@ -92,7 +92,7 @@
 
             {{-- Custom Range Toggle Button (Desktop) --}}
             <button type="button" @click="custom = !custom"
-                    class="hidden sm:inline-flex items-center gap-1.5 rounded-xl border border-line px-3 py-1.5 text-xs font-semibold transition dark:border-strokedark
+                    class="hidden sm:inline-flex items-center gap-1.5 rounded-xl border border-line px-3.5 py-1.5 text-xs font-semibold transition dark:border-strokedark
                            {{ $range['preset'] === 'custom'
                                ? 'bg-brand text-white border-brand shadow-xs'
                                : 'bg-white text-ink hover:bg-surface dark:bg-boxdark dark:text-gray-300 dark:hover:bg-boxdark2' }}">
@@ -103,8 +103,8 @@
 
         {{-- Right: Date Range Label --}}
         <div class="flex items-center justify-between sm:justify-end gap-2 text-xs font-semibold text-muted">
-            <span class="inline-flex items-center gap-1.5 rounded-lg bg-surface/80 px-2.5 py-1 text-ink/80 dark:bg-boxdark2 dark:text-gray-300">
-                <i class="fa-regular fa-calendar-days text-brand text-[11px]"></i>
+            <span class="inline-flex items-center gap-2 rounded-xl bg-surface/90 border border-line/60 px-3 py-1.5 text-ink/80 dark:bg-boxdark2 dark:border-strokedark dark:text-gray-300">
+                <i class="fa-regular fa-calendar-days text-brand text-xs"></i>
                 <span>{{ $range['from']->format('d M Y') }} &ndash; {{ $range['to']->format('d M Y') }}</span>
             </span>
         </div>

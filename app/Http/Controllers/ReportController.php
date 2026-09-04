@@ -278,11 +278,11 @@ class ReportController extends Controller implements HasMiddleware
 
     private function exportDeliveries(Request $request, $from, $to, string $format, string $stamp)
     {
-        $query = $this->deliveryQuery($request, $from, $to)->with(['customer'])->orderBy('requested_delivery_date');
+        $query = $this->deliveryQuery($request, $from, $to)->with(['customer', 'salesPerson'])->orderBy('requested_delivery_date');
 
         $headers = [
             'Requested Delivery Date', 'Actual Delivery Date', 'Order Number',
-            'Customer', 'ZIP', 'Order Status', 'On Time / Late', 'Days Late', 'Total',
+            'Customer', 'ZIP', 'Sales Person', 'Order Status', 'On Time / Late', 'Days Late', 'Total',
         ];
 
         $rows = function () use ($query) {
@@ -293,6 +293,7 @@ class ReportController extends Controller implements HasMiddleware
                     $o->order_number,
                     $o->customer?->name,
                     $o->zip_code,
+                    $o->salesPerson?->name ?? '--',
                     $o->order_status->label(),
                     $o->deliveryPerformance()->label(),
                     $o->daysLate(),

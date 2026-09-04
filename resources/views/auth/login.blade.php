@@ -6,6 +6,12 @@
 
     <x-auth-session-status class="mt-4" :status="session('status')" />
 
+    @if (session('error'))
+        <div class="mt-4 rounded-xl border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger">
+            <i class="fa-solid fa-triangle-exclamation mr-1"></i>{{ session('error') }}
+        </div>
+    @endif
+
     @if ($errors->any())
         <div class="mt-4 rounded-xl border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger">
             <i class="fa-solid fa-triangle-exclamation mr-1"></i>{{ $errors->first() }}

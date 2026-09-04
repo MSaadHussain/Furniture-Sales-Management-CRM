@@ -84,8 +84,8 @@ class CatalogueTest extends TestCase
     {
         $customer = Customer::factory()->create();
 
-        Order::factory()->create(['customer_id' => $customer->id, 'grand_total' => 100000]);
-        Order::factory()->create(['customer_id' => $customer->id, 'grand_total' => 50000]);
+        Order::factory()->delivered()->create(['customer_id' => $customer->id, 'grand_total' => 100000]);
+        Order::factory()->delivered()->create(['customer_id' => $customer->id, 'grand_total' => 50000]);
 
         $this->assertSame(2, $customer->orderCount());
         $this->assertEquals(150000.0, $customer->totalSpent());

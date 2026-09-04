@@ -57,8 +57,8 @@
                                 @foreach ($orders as $order)
                                     <tr class="transition hover:bg-surface dark:hover:bg-boxdark/50">
                                         <td class="ta-td">
-                                            <a href="{{ route('orders.show', $order) }}" class="font-semibold text-brand hover:underline">
-                                                {{ $order->order_number }}
+                                            <a href="{{ route('orders.show', $order) }}" class="font-bold text-sm text-brand hover:underline" title="{{ $order->order_number }}">
+                                                {{ $order->display_number }}
                                             </a>
                                             <p class="text-xs text-muted">{{ $order->order_created_at?->format('d M Y') }}</p>
                                         </td>

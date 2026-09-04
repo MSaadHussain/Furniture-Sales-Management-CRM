@@ -56,15 +56,15 @@
             @include('layouts.partials.header')
 
             <main class="flex-1">
-                <div class="mx-auto w-full max-w-screen-2xl p-4 sm:p-6 lg:p-8">
+                <div class="mx-auto w-full max-w-screen-2xl px-4 py-3 sm:px-6 sm:py-4 lg:px-8 lg:py-4">
 
                     {{-- Page heading + actions (mirrors AdminLTE content-header) --}}
                     @hasSection('title')
-                        <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
+                        <div class="mb-3.5 flex flex-wrap items-center justify-between gap-2">
                             <div>
-                                <h1 class="text-2xl font-bold text-ink dark:text-white">@yield('title', 'Dashboard')</h1>
+                                <h1 class="text-xl font-bold text-ink dark:text-white sm:text-2xl">@yield('title', 'Dashboard')</h1>
                                 @hasSection('breadcrumb')
-                                    <nav class="mt-1 text-sm text-muted">@yield('breadcrumb')</nav>
+                                    <nav class="mt-0.5 text-xs text-muted">@yield('breadcrumb')</nav>
                                 @endif
                             </div>
                             <div class="flex flex-wrap items-center gap-2">@yield('header_actions')</div>
@@ -74,15 +74,15 @@
                     {{-- Flash toast (same session key the app already uses) --}}
                     @if (session('toast'))
                         <div x-data="{ show: true }" x-show="show" x-transition
-                             class="mb-6 flex items-center justify-between gap-3 rounded-xl border border-success/30
-                                    bg-success/10 px-4 py-3 text-sm text-success">
+                             class="mb-4 flex items-center justify-between gap-3 rounded-xl border border-success/30
+                                    bg-success/10 px-4 py-2.5 text-sm text-success">
                             <span><i class="fa-solid fa-circle-check mr-2"></i>{{ session('toast') }}</span>
                             <button @click="show = false"><i class="fa-solid fa-xmark"></i></button>
                         </div>
                     @endif
 
                     @if (session('error'))
-                        <div class="mb-6 rounded-xl border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger">
+                        <div class="mb-4 rounded-xl border border-danger/30 bg-danger/10 px-4 py-2.5 text-sm text-danger">
                             <i class="fa-solid fa-triangle-exclamation mr-2"></i>{{ session('error') }}
                         </div>
                     @endif
@@ -212,6 +212,74 @@
     </script>
     @endif
     @endauth
+
+    {{-- ================= Global Animated Loading Overlay & Action Blocker ================= --}}
+    <div id="globalLoadingOverlay"
+         class="fixed inset-0 z-[99999] flex items-center justify-center bg-slate-900/40 backdrop-blur-[2px] transition-all duration-200 pointer-events-auto select-none"
+         style="display: none;">
+        <div class="flex flex-col items-center justify-center rounded-2xl border border-line bg-white/95 px-8 py-6 shadow-2xl dark:border-strokedark dark:bg-boxdark/95 min-w-[260px] max-w-sm text-center">
+            {{-- Modern Dual-Ring Brand Spinner --}}
+            <div class="relative mb-3.5 flex h-12 w-12 items-center justify-center">
+                <div class="absolute h-12 w-12 rounded-full border-4 border-brand/20"></div>
+                <div class="h-12 w-12 animate-spin rounded-full border-4 border-brand border-t-transparent"></div>
+                <i class="fa-solid fa-sync text-brand text-xs absolute"></i>
+            </div>
+            
+            <h4 id="globalLoadingTitle" class="text-sm font-bold text-ink dark:text-white">
+                Updating, please wait...
+            </h4>
+            <p id="globalLoadingSubtitle" class="mt-1 text-xs text-muted">
+                Saving changes and refreshing...
+            </p>
+        </div>
+    </div>
+
+    <script>
+    (function () {
+        window.showLoading = function(title, subtitle) {
+            var overlay = document.getElementById('globalLoadingOverlay');
+            if (!overlay) return;
+            if (title) document.getElementById('globalLoadingTitle').textContent = title;
+            if (subtitle !== undefined) document.getElementById('globalLoadingSubtitle').textContent = subtitle;
+            overlay.style.display = 'flex';
+            document.body.style.pointerEvents = 'none';
+            overlay.style.pointerEvents = 'auto';
+        };
+
+        window.hideLoading = function() {
+            var overlay = document.getElementById('globalLoadingOverlay');
+            if (overlay) {
+                overlay.style.display = 'none';
+                document.body.style.pointerEvents = '';
+            }
+        };
+
+        // Ensure overlay hides if page is restored from bfcache (browser back/forward)
+        window.addEventListener('pageshow', function() {
+            window.hideLoading();
+        });
+
+        // Intercept all standard form submissions (excluding file downloads / export)
+        document.addEventListener('submit', function(e) {
+            var form = e.target;
+            if (!form || form.tagName !== 'FORM') return;
+            if (form.hasAttribute('data-no-loading') || form.classList.contains('no-loading') || form.target === '_blank') return;
+            
+            var action = (form.getAttribute('action') || '').toLowerCase();
+            if (action.includes('export') || form.querySelector('input[name="format"]')) return;
+
+            var submitBtn = form.querySelector('button[type="submit"], input[type="submit"]');
+            var btnText = submitBtn ? submitBtn.innerText.trim() : '';
+
+            var title = 'Updating, please wait...';
+            if (btnText && btnText.toLowerCase().includes('create')) title = 'Creating, please wait...';
+            else if (btnText && btnText.toLowerCase().includes('save')) title = 'Saving, please wait...';
+            else if (btnText && btnText.toLowerCase().includes('delete')) title = 'Deleting, please wait...';
+
+            window.showLoading(title, 'Saving changes and reloading...');
+        });
+    })();
+    </script>
 
     @stack('scripts')
 </body>

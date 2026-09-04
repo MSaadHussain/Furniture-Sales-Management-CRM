@@ -1,7 +1,7 @@
 @extends('layouts.app')
-@section('title', $order->order_number)
+@section('title', 'Order ' . $order->display_number)
 @section('breadcrumb')
-    <a href="{{ route('orders.index') }}" class="hover:text-brand">Sales</a> / {{ $order->order_number }}
+    <a href="{{ route('orders.index') }}" class="hover:text-brand">Sales</a> / {{ $order->display_number }} <span class="text-xs text-muted">({{ $order->order_number }})</span>
 @endsection
 
 @section('header_actions')
@@ -48,14 +48,13 @@
             {{-- ==================== Items ==================== --}}
             <x-card padding="p-0" title="Items" :subtitle="$order->totalQuantity() . ' units across ' . $order->items->count() . ' line(s)'">
                 <div class="overflow-x-auto">
-                    <table class="w-full min-w-[620px]">
+                    <table class="w-full">
                         <thead class="border-b border-line dark:border-strokedark">
                             <tr>
                                 <th class="ta-th">Item</th>
                                 <th class="ta-th">Colour</th>
                                 <th class="ta-th text-right">Qty</th>
                                 <th class="ta-th text-right">Unit price</th>
-                                <th class="ta-th text-right">Discount</th>
                                 <th class="ta-th text-right">Line total</th>
                             </tr>
                         </thead>
@@ -63,7 +62,7 @@
                             @foreach ($order->items as $item)
                                 <tr>
                                     <td class="ta-td">
-                                        <p class="font-medium">{{ $item->item_name_snapshot }}</p>
+                                        <p class="font-medium text-ink dark:text-white">{{ $item->item_name_snapshot }}</p>
                                         @if ($item->category_name_snapshot)
                                             <p class="text-xs text-muted">{{ $item->category_name_snapshot }}</p>
                                         @endif
@@ -76,45 +75,22 @@
                                             <span class="flex items-center gap-2">
                                                 <span class="h-3 w-3 rounded-full border border-line"
                                                       style="background-color: {{ $item->colour?->swatch() ?? '#98A2B3' }}"></span>
-                                                {{ $item->item_colour }}
+                                                <span class="font-medium text-ink dark:text-gray-200">{{ $item->item_colour }}</span>
                                             </span>
                                         @else
                                             <span class="text-muted">--</span>
                                         @endif
                                     </td>
-                                    <td class="ta-td text-right">{{ $item->quantity }}</td>
-                                    <td class="ta-td text-right"><x-money :amount="$item->unit_price" /></td>
-                                    <td class="ta-td text-right">{{ (float) $item->discount > 0 ? \App\Support\Money::format($item->discount) : '--' }}</td>
-                                    <td class="ta-td text-right font-semibold"><x-money :amount="$item->line_total" /></td>
+                                    <td class="ta-td text-right font-bold text-ink dark:text-white">{{ $item->quantity }}</td>
+                                    <td class="ta-td text-right font-medium text-ink dark:text-gray-200"><x-money :amount="$item->unit_price" /></td>
+                                    <td class="ta-td text-right font-bold text-brand"><x-money :amount="$item->line_total" /></td>
                                 </tr>
                             @endforeach
                         </tbody>
                         <tfoot class="border-t border-line dark:border-strokedark">
-                            <tr>
-                                <td colspan="5" class="ta-td text-right text-muted">Subtotal</td>
-                                <td class="ta-td text-right"><x-money :amount="$order->subtotal" /></td>
-                            </tr>
-                            @if ((float) $order->discount > 0)
-                                <tr>
-                                    <td colspan="5" class="ta-td text-right text-muted">Order discount</td>
-                                    <td class="ta-td text-right text-danger">- <x-money :amount="$order->discount" /></td>
-                                </tr>
-                            @endif
-                            @if ((float) $order->delivery_charge > 0)
-                                <tr>
-                                    <td colspan="5" class="ta-td text-right text-muted">Delivery charge</td>
-                                    <td class="ta-td text-right"><x-money :amount="$order->delivery_charge" /></td>
-                                </tr>
-                            @endif
-                            @if ((float) $order->tax > 0)
-                                <tr>
-                                    <td colspan="5" class="ta-td text-right text-muted">Tax / VAT</td>
-                                    <td class="ta-td text-right"><x-money :amount="$order->tax" /></td>
-                                </tr>
-                            @endif
-                            <tr class="bg-surface dark:bg-boxdark/60">
-                                <td colspan="5" class="ta-td text-right font-semibold">Grand total</td>
-                                <td class="ta-td text-right text-lg font-bold text-brand"><x-money :amount="$order->grand_total" /></td>
+                            <tr class="bg-surface/50 dark:bg-boxdark/60">
+                                <td colspan="4" class="ta-td text-right font-bold text-ink dark:text-white">Grand total</td>
+                                <td class="ta-td text-right text-lg font-black text-brand"><x-money :amount="$order->grand_total" /></td>
                             </tr>
                         </tfoot>
                     </table>
@@ -163,7 +139,7 @@
                             <a href="{{ route('orders.show', $previous) }}"
                                class="flex items-center justify-between gap-4 px-5 py-3 transition hover:bg-surface dark:hover:bg-boxdark/50">
                                 <span>
-                                    <span class="block text-sm font-semibold text-brand">{{ $previous->order_number }}</span>
+                                    <span class="block text-sm font-semibold text-brand" title="{{ $previous->order_number }}">{{ $previous->display_number }}</span>
                                     <span class="block text-xs text-muted">{{ $previous->order_created_at?->format('d M Y') }}</span>
                                 </span>
                                 <span class="flex items-center gap-3">
@@ -278,7 +254,7 @@
     <div x-data="{ open: false }" x-on:open-cancel.window="open = true" x-show="open" x-cloak
          class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
         <div x-on:click.outside="open = false" class="w-full max-w-md rounded-2xl bg-white p-6 dark:bg-boxdark2">
-            <h3 class="text-lg font-semibold text-ink dark:text-white">Cancel {{ $order->order_number }}?</h3>
+            <h3 class="text-lg font-semibold text-ink dark:text-white">Cancel Order {{ $order->display_number }}?</h3>
             <p class="mt-1 text-sm text-muted">
                 The order stops counting towards revenue and becomes read-only. This is recorded in the audit log.
             </p>

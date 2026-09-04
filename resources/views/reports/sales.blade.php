@@ -84,13 +84,12 @@
             <x-empty-state icon="fa-receipt" title="No orders in this period" />
         @else
             <div class="overflow-x-auto">
-                <table class="w-full min-w-[1020px]">
+                <table class="w-full">
                     <thead class="border-b border-line dark:border-strokedark">
                         <tr>
                             <th class="ta-th">Order</th>
                             <th class="ta-th">Created</th>
                             <th class="ta-th">Requested</th>
-                            <th class="ta-th">Actual</th>
                             <th class="ta-th">Customer</th>
                             <th class="ta-th">ZIP</th>
                             <th class="ta-th">Sales Person</th>
@@ -102,13 +101,12 @@
                         @foreach ($orders as $order)
                             <tr class="transition hover:bg-surface dark:hover:bg-boxdark/50">
                                 <td class="ta-td">
-                                    <a href="{{ route('orders.show', $order) }}" class="font-semibold text-brand hover:underline">
-                                        {{ $order->order_number }}
+                                    <a href="{{ route('orders.show', $order) }}" class="font-bold text-sm text-brand hover:underline" title="{{ $order->order_number }}">
+                                        {{ $order->display_number }}
                                     </a>
                                 </td>
                                 <td class="ta-td text-muted">{{ $order->order_created_at?->format('d M Y') }}</td>
                                 <td class="ta-td">{{ $order->requested_delivery_date?->format('d M Y') }}</td>
-                                <td class="ta-td">{{ $order->actual_delivery_date?->format('d M Y') ?? '--' }}</td>
                                 <td class="ta-td">{{ $order->customer?->name }}</td>
                                 <td class="ta-td font-semibold">{{ $order->zip_code }}</td>
                                 <td class="ta-td">{{ $order->salesPerson?->name ?? '--' }}</td>
@@ -128,33 +126,46 @@
 @push('scripts')
 <script>
     (function () {
-        const el = document.getElementById('reportTrend');
-        if (!el || typeof Chart === 'undefined') return;
+        function initChart() {
+            const el = document.getElementById('reportTrend');
+            if (!el) return;
+            if (typeof Chart === 'undefined') {
+                setTimeout(initChart, 50);
+                return;
+            }
+            if (el._chartInstance) return;
 
-        const dark = document.documentElement.classList.contains('dark');
-        const tick = dark ? '#98A2B3' : '#667085';
+            const dark = document.documentElement.classList.contains('dark');
+            const tick = dark ? '#98A2B3' : '#667085';
 
-        new Chart(el, {
-            type: 'bar',
-            data: {
-                labels: @json($trend['labels']),
-                datasets: [{
-                    label: 'Revenue',
-                    data: @json($trend['revenue']),
-                    backgroundColor: 'rgba(70,95,255,.6)',
-                    borderRadius: 4,
-                }],
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: {
-                    x: { grid: { display: false }, ticks: { color: tick, maxRotation: 0, autoSkipPadding: 16 } },
-                    y: { ticks: { color: tick } },
+            el._chartInstance = new Chart(el, {
+                type: 'bar',
+                data: {
+                    labels: @json($trend['labels']),
+                    datasets: [{
+                        label: 'Revenue',
+                        data: @json($trend['revenue']),
+                        backgroundColor: 'rgba(70,95,255,.6)',
+                        borderRadius: 4,
+                    }],
                 },
-            },
-        });
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { color: tick, maxRotation: 0, autoSkipPadding: 16 } },
+                        y: { ticks: { color: tick } },
+                    },
+                },
+            });
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initChart);
+        } else {
+            initChart();
+        }
     })();
 </script>
 @endpush

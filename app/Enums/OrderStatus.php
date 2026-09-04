@@ -89,18 +89,15 @@ enum OrderStatus: string
         return array_map(fn (self $s) => $s->value, self::openCases());
     }
 
-    /** Cancelled and Returned orders are excluded from revenue reporting. */
+    /** Only Delivered orders count towards realized revenue and sales reporting. */
     public static function revenueValues(): array
     {
-        return array_values(array_diff(
-            array_map(fn (self $s) => $s->value, self::cases()),
-            [self::Cancelled->value, self::Returned->value]
-        ));
+        return [self::Delivered->value];
     }
 
     public function countsAsRevenue(): bool
     {
-        return ! in_array($this, [self::Cancelled, self::Returned], true);
+        return $this === self::Delivered;
     }
 
     public function isDelivered(): bool

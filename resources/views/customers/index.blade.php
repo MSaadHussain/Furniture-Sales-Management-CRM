@@ -56,7 +56,7 @@
                            message="Customers are created here or automatically from the order form." />
         @else
             <div class="hidden overflow-x-auto lg:block">
-                <table class="w-full min-w-[900px]">
+                <table class="w-full">
                     <thead class="border-b border-line dark:border-strokedark">
                         <tr>
                             <th class="ta-th">ID</th>

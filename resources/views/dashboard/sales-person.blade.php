@@ -129,7 +129,7 @@
                             <div class="flex items-start justify-between gap-2">
                                 <div>
                                     <div class="flex items-center gap-2">
-                                        <span class="font-mono text-sm font-bold text-ink dark:text-white">{{ $order->order_number }}</span>
+                                        <span class="font-mono text-base font-bold text-ink dark:text-white" title="{{ $order->order_number }}">{{ $order->display_number }}</span>
                                         <span class="text-xs text-muted">· {{ $order->created_at->diffForHumans() }}</span>
                                     </div>
                                     

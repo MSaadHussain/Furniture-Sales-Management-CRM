@@ -93,6 +93,32 @@ class Order extends Model
         return $query->whereBetween('order_created_at', [$from, $to]);
     }
 
+    public function getDisplayNumberAttribute(): string
+    {
+        if (! $this->order_number) {
+            return '#' . $this->id;
+        }
+
+        if (preg_match('/-(\d+)$/', (string) $this->order_number, $matches)) {
+            return '#' . (int) $matches[1];
+        }
+
+        return '#' . $this->order_number;
+    }
+
+    public function getShortNumberAttribute(): string
+    {
+        if (! $this->order_number) {
+            return (string) $this->id;
+        }
+
+        if (preg_match('/-(\d+)$/', (string) $this->order_number, $matches)) {
+            return (string) (int) $matches[1];
+        }
+
+        return (string) $this->order_number;
+    }
+
     public function scopeSearch(Builder $query, ?string $term): Builder
     {
         $term = trim((string) $term);
@@ -100,8 +126,11 @@ class Order extends Model
             return $query;
         }
 
-        return $query->where(function (Builder $q) use ($term) {
+        $cleanTerm = ltrim($term, '#');
+
+        return $query->where(function (Builder $q) use ($term, $cleanTerm) {
             $q->where('order_number', 'like', "%{$term}%")
+              ->orWhere('order_number', 'like', "%{$cleanTerm}%")
               ->orWhere('zip_code', 'like', "%{$term}%")
               ->orWhereHas('customer', function (Builder $c) use ($term) {
                   $c->where('name', 'like', "%{$term}%")
@@ -203,6 +232,6 @@ class Order extends Model
 
         $total = \App\Support\Money::format($this->grand_total);
 
-        return "Name: {$name}\nNumber: {$phone}\nAddress: {$address}\nProduct: {$productList}\nPrice Total: {$total}";
+        return "Order: {$this->display_number}\nName: {$name}\nNumber: {$phone}\nAddress: {$address}\nProduct: {$productList}\nPrice Total: {$total}";
     }
 }

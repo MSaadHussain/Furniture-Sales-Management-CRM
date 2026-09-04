@@ -124,37 +124,48 @@
 @push('scripts')
 <script>
     (function () {
-        if (typeof Chart === 'undefined') return;
+        function initCharts() {
+            if (typeof Chart === 'undefined') {
+                setTimeout(initCharts, 50);
+                return;
+            }
 
-        const dark = document.documentElement.classList.contains('dark');
-        const tick = dark ? '#98A2B3' : '#667085';
-        const palette = ['#465FFF', '#12B76A', '#F79009', '#7A5AF8', '#06AED4', '#F04438', '#DC6803', '#2E90FA'];
+            const dark = document.documentElement.classList.contains('dark');
+            const tick = dark ? '#98A2B3' : '#667085';
+            const palette = ['#465FFF', '#12B76A', '#F79009', '#7A5AF8', '#06AED4', '#F04438', '#DC6803', '#2E90FA'];
 
-        const bar = (id, labels, values, label) => {
-            const el = document.getElementById(id);
-            if (!el) return;
+            const bar = (id, labels, values, label) => {
+                const el = document.getElementById(id);
+                if (!el || el._chartInstance) return;
 
-            new Chart(el, {
-                type: 'bar',
-                data: {
-                    labels,
-                    datasets: [{ label, data: values, backgroundColor: palette, borderRadius: 4 }],
-                },
-                options: {
-                    indexAxis: 'y',
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        x: { ticks: { color: tick } },
-                        y: { grid: { display: false }, ticks: { color: tick } },
+                el._chartInstance = new Chart(el, {
+                    type: 'bar',
+                    data: {
+                        labels,
+                        datasets: [{ label, data: values, backgroundColor: palette, borderRadius: 4 }],
                     },
-                },
-            });
-        };
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            x: { ticks: { color: tick } },
+                            y: { grid: { display: false }, ticks: { color: tick } },
+                        },
+                    },
+                });
+            };
 
-        bar('productRevenue', @json($byRevenue->pluck('name')), @json($byRevenue->pluck('revenue')), 'Revenue');
-        bar('categoryRevenue', @json($categories->pluck('name')), @json($categories->pluck('revenue')), 'Revenue');
+            bar('productRevenue', @json($byRevenue->pluck('name')), @json($byRevenue->pluck('revenue')), 'Revenue');
+            bar('categoryRevenue', @json($categories->pluck('name')), @json($categories->pluck('revenue')), 'Revenue');
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initCharts);
+        } else {
+            initCharts();
+        }
     })();
 </script>
 @endpush

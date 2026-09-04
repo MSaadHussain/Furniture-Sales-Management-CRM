@@ -193,8 +193,8 @@
                             <tr class="transition hover:bg-surface/60 dark:hover:bg-boxdark/50">
                                 {{-- Order Number & Date --}}
                                 <td class="py-2.5 px-3 whitespace-nowrap">
-                                    <a href="{{ route('orders.show', $order) }}" class="font-bold text-brand hover:underline">
-                                        {{ $order->order_number }}
+                                    <a href="{{ route('orders.show', $order) }}" class="font-bold text-sm text-brand hover:underline" title="{{ $order->order_number }}">
+                                        {{ $order->display_number }}
                                     </a>
                                     <p class="text-[10px] text-muted">{{ $order->order_created_at?->format('d M Y') }}</p>
                                 </td>
@@ -267,7 +267,7 @@
                                             @csrf
                                             @method('PATCH')
                                             <select name="order_status"
-                                                    x-on:change="$refs['statusForm{{ $order->id }}'].submit()"
+                                                    x-on:change="window.showLoading('Updating Order Status...', 'Saving status and updating records...'); $refs['statusForm{{ $order->id }}'].submit()"
                                                     class="rounded-lg text-[11px] font-bold px-2.5 py-1 border shadow-xs transition cursor-pointer focus:ring-1 focus:outline-none {{ $order->order_status === \App\Enums\OrderStatus::Delivered ? '!bg-emerald-600 !text-white !border-emerald-600' : ($order->order_status === \App\Enums\OrderStatus::Cancelled ? '!bg-red-600 !text-white !border-red-600' : '!bg-amber-100 !text-amber-800 !border-amber-300 dark:!bg-amber-900/50 dark:!text-amber-200') }}">
                                                 <option value="new" @selected(!in_array($order->order_status, [\App\Enums\OrderStatus::Delivered, \App\Enums\OrderStatus::Cancelled])) class="bg-white text-ink dark:bg-boxdark dark:text-white font-semibold">Pending</option>
                                                 <option value="delivered" @selected($order->order_status === \App\Enums\OrderStatus::Delivered) class="bg-white text-ink dark:bg-boxdark dark:text-white font-semibold">Delivered</option>
@@ -314,8 +314,8 @@
                     <div class="p-4 transition hover:bg-surface dark:hover:bg-boxdark/50">
                         <div class="flex items-start justify-between gap-3">
                             <div class="min-w-0">
-                                <a href="{{ route('orders.show', $order) }}" class="font-bold text-brand hover:underline">
-                                    {{ $order->order_number }}
+                                <a href="{{ route('orders.show', $order) }}" class="font-bold text-base text-brand hover:underline" title="{{ $order->order_number }}">
+                                    {{ $order->display_number }}
                                 </a>
                                 <p class="truncate text-sm font-medium text-ink dark:text-gray-200">{{ $order->customer?->name }}</p>
                                 <p class="truncate text-xs text-muted">{{ $order->itemSummary(2) }}</p>

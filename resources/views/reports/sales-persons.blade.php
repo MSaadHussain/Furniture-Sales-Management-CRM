@@ -101,7 +101,7 @@
                            message="Add sales persons under User Management to view comparison." />
         @else
             <div class="overflow-x-auto">
-                <table class="w-full min-w-[550px]">
+                <table class="w-full">
                     <thead class="border-b border-line dark:border-strokedark">
                         <tr>
                             <th class="ta-th w-16 text-center">Rank</th>
@@ -176,56 +176,95 @@
 @push('scripts')
 <script>
     (function () {
-        const el = document.getElementById('salesPersonCompareChart');
-        if (!el || typeof Chart === 'undefined') return;
+        function initChart() {
+            const el = document.getElementById('salesPersonCompareChart');
+            if (!el) return;
+            if (typeof Chart === 'undefined') {
+                setTimeout(initChart, 50);
+                return;
+            }
+            if (el._chartInstance) return;
 
-        const dark = document.documentElement.classList.contains('dark');
-        const grid = dark ? 'rgba(255,255,255,.08)' : 'rgba(16,24,40,.06)';
-        const tick = dark ? '#98A2B3' : '#667085';
+            const dark = document.documentElement.classList.contains('dark');
+            const grid = dark ? 'rgba(255,255,255,.08)' : 'rgba(16,24,40,.06)';
+            const tick = dark ? '#98A2B3' : '#667085';
 
-        const labels = @json($rows->pluck('name'));
-        const revenueData = @json($rows->pluck('revenue'));
-        const ordersData = @json($rows->pluck('orders'));
+            const labels = @json($rows->pluck('name'));
+            const revenueData = @json($rows->pluck('revenue'));
+            const ordersData = @json($rows->pluck('orders'));
 
-        new Chart(el, {
-            type: 'bar',
-            data: {
-                labels: labels,
-                datasets: [
-                    {
-                        label: 'Revenue (€)',
-                        data: revenueData,
-                        yAxisID: 'y',
-                        backgroundColor: '#2563EB',
-                        borderRadius: 6,
-                        barPercentage: .5,
-                        categoryPercentage: .6,
-                    },
-                    {
-                        label: 'Orders Closed',
-                        data: ordersData,
-                        yAxisID: 'y1',
-                        backgroundColor: '#12B76A',
-                        borderRadius: 6,
-                        barPercentage: .5,
-                        categoryPercentage: .6,
-                    },
-                ],
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                interaction: { mode: 'index', intersect: false },
-                plugins: {
-                    legend: { position: 'top', labels: { color: tick, boxWidth: 12, font: { size: 11 } } },
+            el._chartInstance = new Chart(el, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Revenue (€)',
+                            data: revenueData,
+                            yAxisID: 'y',
+                            backgroundColor: '#2563EB',
+                            borderRadius: 6,
+                            barPercentage: .5,
+                            categoryPercentage: .6,
+                        },
+                        {
+                            label: 'Orders Closed',
+                            data: ordersData,
+                            yAxisID: 'y1',
+                            backgroundColor: '#12B76A',
+                            borderRadius: 6,
+                            barPercentage: .5,
+                            categoryPercentage: .6,
+                        },
+                    ],
                 },
-                scales: {
-                    x:  { grid: { display: false }, ticks: { color: tick, maxRotation: 0 } },
-                    y:  { position: 'left',  grid: { color: grid }, ticks: { color: tick } },
-                    y1: { position: 'right', grid: { display: false }, ticks: { color: tick, precision: 0 } },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: { position: 'top', labels: { color: tick, boxWidth: 12, font: { size: 11 } } },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) label += ': ';
+                                    if (context.dataset.yAxisID === 'y') {
+                                        label += '€ ' + Number(context.parsed.y).toLocaleString();
+                                    } else {
+                                        label += Number(context.parsed.y).toLocaleString();
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x:  { grid: { display: false }, ticks: { color: tick, font: { size: 11, weight: 'bold' } } },
+                        y:  {
+                            position: 'left',
+                            grid: { color: grid },
+                            ticks: {
+                                color: tick,
+                                font: { size: 10 },
+                                callback: function(value) { return '€' + (value >= 1000 ? (value/1000) + 'k' : value); }
+                            }
+                        },
+                        y1: {
+                            position: 'right',
+                            grid: { display: false },
+                            ticks: { color: tick, precision: 0, font: { size: 10 } }
+                        },
+                    },
                 },
-            },
-        });
+            });
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initChart);
+        } else {
+            initChart();
+        }
     })();
 </script>
 @endpush

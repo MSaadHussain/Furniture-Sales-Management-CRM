@@ -20,5 +20,25 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        //
+        $exceptions->render(function (\Illuminate\Session\TokenMismatchException $e, \Illuminate\Http\Request $request) {
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Your session expired. Please refresh and try again.'], 419);
+            }
+
+            return redirect()->back()
+                ->withInput($request->except('password', 'password_confirmation', '_token'))
+                ->with('error', 'Your session expired. Please try again.');
+        });
+
+        $exceptions->render(function (\Symfony\Component\HttpKernel\Exception\HttpException $e, \Illuminate\Http\Request $request) {
+            if ($e->getStatusCode() === 419) {
+                if ($request->expectsJson()) {
+                    return response()->json(['message' => 'Your session expired. Please refresh and try again.'], 419);
+                }
+
+                return redirect()->back()
+                    ->withInput($request->except('password', 'password_confirmation', '_token'))
+                    ->with('error', 'Your session expired. Please try again.');
+            }
+        });
     })->create();

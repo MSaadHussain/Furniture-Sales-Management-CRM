@@ -103,7 +103,7 @@
                            :message="'No deliveries are scheduled for ' . $date->format('d M Y') . '.'" />
         @else
             <div class="hidden overflow-x-auto lg:block">
-                <table class="w-full min-w-[1000px]">
+                <table class="w-full">
                     <thead class="border-b border-line dark:border-strokedark">
                         <tr>
                             <th class="ta-th">Order</th>
@@ -119,36 +119,45 @@
                     </thead>
                     <tbody class="divide-y divide-line dark:divide-strokedark">
                         @foreach ($orders as $order)
-                            <tr class="transition hover:bg-surface dark:hover:bg-boxdark/50">
+                            <tr class="transition hover:bg-surface/70 dark:hover:bg-boxdark/50">
                                 <td class="ta-td">
-                                    <a href="{{ route('orders.show', $order) }}" class="font-semibold text-brand hover:underline">
-                                        {{ $order->order_number }}
+                                    <a href="{{ route('orders.show', $order) }}" class="font-bold text-sm text-brand hover:underline" title="{{ $order->order_number }}">
+                                        {{ $order->display_number }}
                                     </a>
                                 </td>
-                                <td class="ta-td font-medium">{{ $order->customer?->name }}</td>
-                                <td class="ta-td">{{ $order->customer?->phone }}</td>
-                                <td class="ta-td font-semibold">{{ $order->zip_code }}</td>
-                                <td class="ta-td max-w-[220px]">
-                                    <span class="block truncate" title="{{ $order->itemSummary(5) }}">{{ $order->itemSummary(2) }}</span>
-                                </td>
-                                <td class="ta-td">{{ $order->salesPerson?->name ?? '--' }}</td>
-                                <td class="ta-td"><x-status-pill :status="$order->order_status" /></td>
-                                <td class="ta-td text-right font-semibold"><x-money :amount="$order->grand_total" /></td>
+                                <td class="ta-td font-semibold text-ink dark:text-gray-100">{{ $order->customer?->name }}</td>
                                 <td class="ta-td">
-                                    <div class="flex items-center justify-end gap-2">
+                                    @if ($order->customer?->phone)
+                                        <a href="tel:{{ $order->customer->phone }}" class="text-xs font-medium text-brand hover:underline inline-flex items-center gap-1">
+                                            <i class="fa-solid fa-phone text-[10px]"></i>
+                                            {{ $order->customer->phone }}
+                                        </a>
+                                    @else
+                                        <span class="text-xs text-muted">--</span>
+                                    @endif
+                                </td>
+                                <td class="ta-td font-bold text-xs text-ink dark:text-gray-200">{{ $order->zip_code }}</td>
+                                <td class="ta-td max-w-[200px]">
+                                    <span class="block truncate text-xs text-muted" title="{{ $order->itemSummary(5) }}">{{ $order->itemSummary(2) }}</span>
+                                </td>
+                                <td class="ta-td text-xs">{{ $order->salesPerson?->name ?? '--' }}</td>
+                                <td class="ta-td"><x-status-pill :status="$order->order_status" /></td>
+                                <td class="ta-td text-right font-bold text-sm text-ink dark:text-white"><x-money :amount="$order->grand_total" /></td>
+                                <td class="ta-td">
+                                    <div class="flex items-center justify-end gap-1.5">
                                         @can('recordDelivery', $order)
                                             @unless ($order->actual_delivery_date)
                                                 <form method="POST" action="{{ route('orders.deliver', $order) }}">
                                                     @csrf @method('PATCH')
                                                     <input type="hidden" name="actual_delivery_date" value="{{ today()->toDateString() }}">
-                                                    <button type="submit" class="btn btn-light px-2.5 py-1.5 text-success"
+                                                    <button type="submit" class="btn btn-light !px-2.5 !py-1 text-xs font-bold text-success hover:bg-success/10"
                                                             title="Mark delivered today">
-                                                        <i class="fa-solid fa-check"></i>
+                                                        <i class="fa-solid fa-check"></i> Delivered
                                                     </button>
                                                 </form>
                                             @endunless
                                         @endcan
-                                        <a href="{{ route('orders.show', $order) }}" class="btn btn-light px-2.5 py-1.5" title="Open">
+                                        <a href="{{ route('orders.show', $order) }}" class="btn btn-light !px-2 !py-1 text-xs text-brand" title="View Order Details">
                                             <i class="fa-solid fa-arrow-right"></i>
                                         </a>
                                     </div>
@@ -164,7 +173,7 @@
                     <div class="p-4">
                         <div class="flex items-start justify-between gap-3">
                             <div class="min-w-0">
-                                <a href="{{ route('orders.show', $order) }}" class="font-semibold text-brand">{{ $order->order_number }}</a>
+                                <a href="{{ route('orders.show', $order) }}" class="font-bold text-base text-brand" title="{{ $order->order_number }}">{{ $order->display_number }}</a>
                                 <p class="truncate text-sm font-medium text-ink dark:text-gray-200">{{ $order->customer?->name }}</p>
                                 <p class="text-xs text-muted">{{ $order->customer?->phone }} &middot; {{ $order->zip_code }}</p>
                                 <p class="mt-1 truncate text-xs text-muted">{{ $order->itemSummary(2) }}</p>

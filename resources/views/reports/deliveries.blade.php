@@ -64,7 +64,7 @@
             <x-empty-state icon="fa-truck" title="No deliveries in this period" />
         @else
             <div class="overflow-x-auto">
-                <table class="w-full min-w-[900px]">
+                <table class="w-full">
                     <thead class="border-b border-line dark:border-strokedark">
                         <tr>
                             <th class="ta-th">Requested</th>
@@ -72,6 +72,7 @@
                             <th class="ta-th">Order</th>
                             <th class="ta-th">Customer</th>
                             <th class="ta-th">ZIP</th>
+                            <th class="ta-th">Sales Person</th>
                             <th class="ta-th">Status</th>
                             <th class="ta-th">Performance</th>
                             <th class="ta-th text-right">Total</th>
@@ -84,12 +85,13 @@
                                 <td class="ta-td">{{ $order->requested_delivery_date?->format('d M Y') }}</td>
                                 <td class="ta-td">{{ $order->actual_delivery_date?->format('d M Y') ?? '--' }}</td>
                                 <td class="ta-td">
-                                    <a href="{{ route('orders.show', $order) }}" class="font-semibold text-brand hover:underline">
-                                        {{ $order->order_number }}
+                                    <a href="{{ route('orders.show', $order) }}" class="font-bold text-sm text-brand hover:underline" title="{{ $order->order_number }}">
+                                        {{ $order->display_number }}
                                     </a>
                                 </td>
                                 <td class="ta-td">{{ $order->customer?->name }}</td>
                                 <td class="ta-td font-semibold">{{ $order->zip_code }}</td>
+                                <td class="ta-td">{{ $order->salesPerson?->name ?? '--' }}</td>
                                 <td class="ta-td"><x-status-pill :status="$order->order_status" /></td>
                                 <td class="ta-td">
                                     <span class="ta-badge"

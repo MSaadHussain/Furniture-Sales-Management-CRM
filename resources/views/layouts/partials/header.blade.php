@@ -25,6 +25,11 @@
         </div>
 
         <div class="flex items-center gap-2 sm:gap-3">
+            @can('manage-orders')
+                <a href="{{ route('orders.create') }}" class="btn btn-primary !py-1.5 !px-3.5 !text-xs hidden md:inline-flex shadow-xs font-bold">
+                    <i class="fa-solid fa-plus text-xs"></i> New Order
+                </a>
+            @endcan
 
             @can('manage-deliveries')
                 @php

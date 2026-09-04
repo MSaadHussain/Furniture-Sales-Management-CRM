@@ -45,6 +45,7 @@ class DashboardController extends Controller
             'tomorrow'       => $this->deliveries->daySummary($tomorrow),
             'tomorrowOrders' => $this->deliveries->ordersForDate($tomorrow)->get(),
             'todayOrders'    => $this->deliveries->ordersForDate($today)->get(),
+            'recentOrders'   => \App\Models\Order::with(['customer', 'salesPerson'])->latest('order_created_at')->take(5)->get(),
             'upcoming'       => $this->deliveries->upcoming(7),
             'overdue'      => $this->deliveries->overdueCount(),
             'pending'      => $this->deliveries->pendingCount(),
@@ -82,26 +83,26 @@ class DashboardController extends Controller
         $todayOrdersCount = \App\Models\Order::query()
             ->where('sales_person_id', $user->id)
             ->whereDate('order_created_at', today())
-            ->where('order_status', '!=', \App\Enums\OrderStatus::Cancelled->value)
+            ->where('order_status', \App\Enums\OrderStatus::Delivered->value)
             ->count();
 
         $weekOrdersCount = \App\Models\Order::query()
             ->where('sales_person_id', $user->id)
             ->whereBetween('order_created_at', [now()->startOfWeek(), now()->endOfWeek()])
-            ->where('order_status', '!=', \App\Enums\OrderStatus::Cancelled->value)
+            ->where('order_status', \App\Enums\OrderStatus::Delivered->value)
             ->count();
 
         $monthOrdersCount = \App\Models\Order::query()
             ->where('sales_person_id', $user->id)
             ->whereBetween('order_created_at', [now()->startOfMonth(), now()->endOfMonth()])
-            ->where('order_status', '!=', \App\Enums\OrderStatus::Cancelled->value)
+            ->where('order_status', \App\Enums\OrderStatus::Delivered->value)
             ->count();
 
         $monthItemsCount = (int) \App\Models\OrderItem::query()
             ->whereHas('order', function ($q) use ($user) {
                 $q->where('sales_person_id', $user->id)
                   ->whereBetween('order_created_at', [now()->startOfMonth(), now()->endOfMonth()])
-                  ->where('order_status', '!=', \App\Enums\OrderStatus::Cancelled->value);
+                  ->where('order_status', \App\Enums\OrderStatus::Delivered->value);
             })
             ->sum('quantity');
 
@@ -142,7 +143,7 @@ class DashboardController extends Controller
             ->where('is_active', true)
             ->leftJoin('orders', function ($join) use ($from, $to) {
                 $join->on('orders.sales_person_id', '=', 'users.id')
-                    ->where('orders.order_status', '!=', \App\Enums\OrderStatus::Cancelled->value)
+                    ->where('orders.order_status', '=', \App\Enums\OrderStatus::Delivered->value)
                     ->whereBetween('orders.order_created_at', [$from, $to]);
             })
             ->selectRaw('users.id, users.name, COUNT(orders.id) as orders_count')

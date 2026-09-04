@@ -1,8 +1,8 @@
 @extends('layouts.app')
-@section('title', 'Edit ' . $order->order_number)
+@section('title', 'Edit Order ' . $order->display_number)
 @section('breadcrumb')
     <a href="{{ route('orders.index') }}" class="hover:text-brand">Sales</a> /
-    <a href="{{ route('orders.show', $order) }}" class="hover:text-brand">{{ $order->order_number }}</a> / Edit
+    <a href="{{ route('orders.show', $order) }}" class="hover:text-brand">{{ $order->display_number }}</a> / Edit
 @endsection
 
 @section('content')
