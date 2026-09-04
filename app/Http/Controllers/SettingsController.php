@@ -14,12 +14,11 @@ use Illuminate\Routing\Controllers\HasMiddleware;
  */
 class SettingsController extends Controller implements HasMiddleware
 {
-    /** Optional Manager rights, all off by default except exporting. */
+    /** Optional Manager rights, all off by default. */
     public const MANAGER_PERMISSIONS = [
         'manager_can_cancel_orders'    => ['label' => 'Cancel orders', 'default' => false, 'hint' => 'Allows a Manager to cancel an order and record a reason.'],
         'manager_can_manage_customers' => ['label' => 'Create and edit customers', 'default' => false, 'hint' => 'Without this a Manager can view customers but not change them.'],
         'manager_can_manage_products'  => ['label' => 'Manage products, categories and colours', 'default' => false, 'hint' => 'Without this a Manager sees the catalogue read-only.'],
-        'manager_can_export_data'      => ['label' => 'Export reports and data', 'default' => true,  'hint' => 'Customer personal data is never exported to Sales Persons regardless.'],
     ];
 
     public function __construct(private AuditService $audit) {}
@@ -46,6 +45,7 @@ class SettingsController extends Controller implements HasMiddleware
             'business_name'      => ['nullable', 'string', 'max:120'],
             'default_date_range' => ['required', 'string', 'in:' . implode(',', array_keys(\App\Services\DateRangeService::presets()))],
             'default_delivery_lead_days' => ['required', 'integer', 'between:0,365'],
+            'daily_sales_target' => ['required', 'integer', 'between:1,1000'],
         ]);
 
         $before = $this->values();
@@ -56,6 +56,7 @@ class SettingsController extends Controller implements HasMiddleware
         Setting::put('business_name', $data['business_name'] ?? null);
         Setting::put('default_date_range', $data['default_date_range']);
         Setting::put('default_delivery_lead_days', (int) $data['default_delivery_lead_days']);
+        Setting::put('daily_sales_target', (int) $data['daily_sales_target']);
 
         foreach (array_keys(self::MANAGER_PERMISSIONS) as $key) {
             Setting::put($key, $request->boolean($key));
@@ -76,6 +77,7 @@ class SettingsController extends Controller implements HasMiddleware
             'business_name'      => Setting::get('business_name'),
             'default_date_range' => (string) Setting::get('default_date_range', 'this_month'),
             'default_delivery_lead_days' => (int) Setting::get('default_delivery_lead_days', 7),
+            'daily_sales_target' => (int) Setting::get('daily_sales_target', 5),
         ];
 
         foreach (self::MANAGER_PERMISSIONS as $key => $meta) {

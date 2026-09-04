@@ -43,7 +43,7 @@
             @endif
         </div>
 
-        @if (! is_null($delta))
+        @if (! empty($delta) && $delta !== 'N/A')
             <span class="ta-badge {{ $deltaUp ? 'text-success' : 'text-danger' }}"
                   style="background-color: {{ $deltaUp ? '#12B76A' : '#F04438' }}1A;">
                 <i class="fa-solid {{ $deltaUp ? 'fa-arrow-up' : 'fa-arrow-down' }} mr-1 text-[10px]"></i>

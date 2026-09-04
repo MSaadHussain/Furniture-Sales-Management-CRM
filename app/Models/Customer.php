@@ -56,21 +56,43 @@ class Customer extends Model
     }
 
     /**
-     * Find an existing customer by phone, tolerating formatting differences and
-     * a country-code prefix (requirements 7.3).
+     * Find an existing customer by phone, tolerating formatting differences,
+     * country codes (+92, +33, 00, etc.), dashes, dots and spaces.
      */
     public static function findByPhone(?string $phone): ?self
     {
+        $raw = trim((string) $phone);
         $digits = self::normalisePhone($phone);
-        if (strlen($digits) < 6) {
+        if (strlen($digits) < 4) {
             return null;
         }
 
-        // Compare on the last 9 digits so 0300 1234567 matches +92 300 1234567.
-        $tail = substr($digits, -9);
+        // 1. Direct indexed match on raw input or stripped digits
+        $direct = static::query()
+            ->where('phone', $raw)
+            ->orWhere('phone', $digits)
+            ->first();
+
+        if ($direct) {
+            return $direct;
+        }
+
+        // 2. Fast prefix / suffix indexed LIKE match (last 7 or 8 digits)
+        $tail = strlen($digits) >= 8 ? substr($digits, -8) : (strlen($digits) >= 7 ? substr($digits, -7) : $digits);
+        $candidate = static::query()
+            ->where('phone', 'like', "%{$tail}")
+            ->first();
+
+        if ($candidate) {
+            return $candidate;
+        }
+
+        // 3. Fallback only if needed (for oddly formatted phone strings in DB)
+        $cleanSql = "REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(phone, ' ', ''), '-', ''), '(', ''), ')', ''), '+', ''), '.', ''), '/', '')";
 
         return static::query()
-            ->whereRaw("REPLACE(REPLACE(REPLACE(REPLACE(phone, ' ', ''), '-', ''), '(', ''), ')', '') LIKE ?", ["%{$tail}"])
+            ->whereRaw("{$cleanSql} = ?", [$digits])
+            ->orWhereRaw("{$cleanSql} LIKE ?", ["%{$tail}"])
             ->first();
     }
 

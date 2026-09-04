@@ -76,25 +76,11 @@
 
                 {{-- Status --}}
                 <div class="w-36">
-                    <select name="order_status" class="ta-input !py-1.5 !text-xs w-full">
+                    <select name="order_status" class="ta-input !py-1.5 !text-xs w-full font-semibold">
                         <option value="">Status: All</option>
-                        @foreach (\App\Enums\OrderStatus::cases() as $status)
-                            <option value="{{ $status->value }}" @selected(($filters['order_status'] ?? '') === $status->value)>
-                                {{ $status->label() }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-
-                {{-- Payment --}}
-                <div class="w-32">
-                    <select name="payment_status" class="ta-input !py-1.5 !text-xs w-full">
-                        <option value="">Payment: All</option>
-                        @foreach (\App\Enums\PaymentStatus::cases() as $status)
-                            <option value="{{ $status->value }}" @selected(($filters['payment_status'] ?? '') === $status->value)>
-                                {{ $status->label() }}
-                            </option>
-                        @endforeach
+                        <option value="new" @selected(($filters['order_status'] ?? '') === 'new')>Pending</option>
+                        <option value="delivered" @selected(($filters['order_status'] ?? '') === 'delivered')>Delivered</option>
+                        <option value="cancelled" @selected(($filters['order_status'] ?? '') === 'cancelled')>Cancelled</option>
                     </select>
                 </div>
 
@@ -198,7 +184,6 @@
                             <th class="ta-th py-3 px-3">Sales Person</th>
                             <th class="ta-th py-3 px-3">Delivery</th>
                             <th class="ta-th py-3 px-3">Order Status</th>
-                            <th class="ta-th py-3 px-3">Payment</th>
                             <th class="ta-th py-3 px-3 text-right">Total</th>
                             <th class="ta-th py-3 px-3 text-right">Action</th>
                         </tr>
@@ -241,17 +226,17 @@
                                     </span>
                                 </td>
 
-                                {{-- Delivery Schedule & Inline Record Delivery --}}
+                                 {{-- Delivery Schedule & Inline Record Delivery --}}
                                 <td class="py-2.5 px-3">
                                     <div class="whitespace-nowrap">
                                         <p class="font-medium text-ink dark:text-gray-200">{{ $order->requested_delivery_date?->format('d M Y') }}</p>
                                         
-                                        @if ($order->actual_delivery_date)
+                                        @if ($order->order_status === \App\Enums\OrderStatus::Delivered && $order->actual_delivery_date)
                                             <span class="inline-flex items-center gap-1 rounded bg-emerald-500/10 px-1.5 py-0.2 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
                                                 <i class="fa-solid fa-check-circle text-[9px]"></i>
                                                 <span>Delivered {{ $order->actual_delivery_date->format('d M') }}</span>
                                             </span>
-                                        @elseif ($order->isOverdue())
+                                        @elseif ($order->isOverdue() && $order->order_status !== \App\Enums\OrderStatus::Cancelled)
                                             <span class="inline-flex items-center gap-1 rounded bg-danger/10 px-1.5 py-0.2 text-[10px] font-bold text-danger">
                                                 <i class="fa-solid fa-clock text-[9px]"></i> Overdue
                                             </span>
@@ -259,7 +244,7 @@
 
                                         {{-- Inline Mark Delivered Action --}}
                                         @can('manage-orders')
-                                            @if (! $order->actual_delivery_date && ! $order->isCancelled())
+                                            @if ($order->order_status !== \App\Enums\OrderStatus::Delivered && $order->order_status !== \App\Enums\OrderStatus::Cancelled)
                                                 <form method="POST" action="{{ route('orders.deliver', $order) }}" class="mt-1">
                                                     @csrf
                                                     <input type="hidden" name="actual_delivery_date" value="{{ today()->toDateString() }}">
@@ -280,41 +265,17 @@
                                     @can('manage-orders')
                                         <form method="POST" action="{{ route('orders.status', $order) }}" x-data x-ref="statusForm{{ $order->id }}">
                                             @csrf
+                                            @method('PATCH')
                                             <select name="order_status"
                                                     x-on:change="$refs['statusForm{{ $order->id }}'].submit()"
-                                                    class="rounded-lg text-[11px] font-bold px-2 py-1 border shadow-xs transition cursor-pointer focus:ring-1 focus:ring-brand focus:outline-none"
-                                                    style="background-color: {{ $order->order_status->color() }}15; color: {{ $order->order_status->color() }}; border-color: {{ $order->order_status->color() }}40;">
-                                                @foreach (\App\Enums\OrderStatus::cases() as $st)
-                                                    @continue($st === \App\Enums\OrderStatus::Cancelled && ! auth()->user()->isAdmin())
-                                                    <option value="{{ $st->value }}" @selected($order->order_status === $st)>
-                                                        {{ $st->label() }}
-                                                    </option>
-                                                @endforeach
+                                                    class="rounded-lg text-[11px] font-bold px-2.5 py-1 border shadow-xs transition cursor-pointer focus:ring-1 focus:outline-none {{ $order->order_status === \App\Enums\OrderStatus::Delivered ? '!bg-emerald-600 !text-white !border-emerald-600' : ($order->order_status === \App\Enums\OrderStatus::Cancelled ? '!bg-red-600 !text-white !border-red-600' : '!bg-amber-100 !text-amber-800 !border-amber-300 dark:!bg-amber-900/50 dark:!text-amber-200') }}">
+                                                <option value="new" @selected(!in_array($order->order_status, [\App\Enums\OrderStatus::Delivered, \App\Enums\OrderStatus::Cancelled])) class="bg-white text-ink dark:bg-boxdark dark:text-white font-semibold">Pending</option>
+                                                <option value="delivered" @selected($order->order_status === \App\Enums\OrderStatus::Delivered) class="bg-white text-ink dark:bg-boxdark dark:text-white font-semibold">Delivered</option>
+                                                <option value="cancelled" @selected($order->order_status === \App\Enums\OrderStatus::Cancelled) class="bg-white text-ink dark:bg-boxdark dark:text-white font-semibold">Cancelled</option>
                                             </select>
                                         </form>
                                     @else
                                         <x-status-pill :status="$order->order_status" />
-                                    @endcan
-                                </td>
-
-                                {{-- Payment Status Inline Dropdown --}}
-                                <td class="py-2.5 px-3 whitespace-nowrap">
-                                    @can('update', $order)
-                                        <form method="POST" action="{{ route('orders.payment', $order) }}" x-data x-ref="payForm{{ $order->id }}">
-                                            @csrf
-                                            <select name="payment_status"
-                                                    x-on:change="$refs['payForm{{ $order->id }}'].submit()"
-                                                    class="rounded-lg text-[11px] font-bold px-2 py-1 border shadow-xs transition cursor-pointer focus:ring-1 focus:ring-brand focus:outline-none"
-                                                    style="background-color: {{ $order->payment_status->color() }}15; color: {{ $order->payment_status->color() }}; border-color: {{ $order->payment_status->color() }}40;">
-                                                @foreach (\App\Enums\PaymentStatus::cases() as $pst)
-                                                    <option value="{{ $pst->value }}" @selected($order->payment_status === $pst)>
-                                                        {{ $pst->label() }}
-                                                    </option>
-                                                @endforeach
-                                            </select>
-                                        </form>
-                                    @else
-                                        <x-status-pill :status="$order->payment_status" />
                                     @endcan
                                 </td>
 
@@ -325,11 +286,21 @@
 
                                 {{-- Action Link --}}
                                 <td class="py-2.5 px-3 text-right whitespace-nowrap">
-                                    <a href="{{ route('orders.show', $order) }}"
-                                       class="inline-flex h-7 w-7 items-center justify-center rounded-lg text-muted transition hover:bg-brand/10 hover:text-brand"
-                                       title="View Order Details">
-                                        <i class="fa-solid fa-arrow-right text-xs"></i>
-                                    </a>
+                                    <div class="flex items-center justify-end gap-1" x-data="{ copied: false, text: @js($order->copyDetailsText()) }">
+                                        <button type="button"
+                                                data-copy-btn="true"
+                                                x-on:click="window.copyOrderToClipboard(text); copied = true; setTimeout(() => copied = false, 2000)"
+                                                class="inline-flex h-7 w-7 items-center justify-center rounded-lg text-muted transition hover:bg-brand/10 hover:text-brand"
+                                                :class="{ '!bg-emerald-500/10 !text-emerald-600': copied }"
+                                                :title="copied ? 'Copied to clipboard!' : 'Copy order details'">
+                                            <i class="fa-solid text-xs" :class="copied ? 'fa-check' : 'fa-copy'"></i>
+                                        </button>
+                                        <a href="{{ route('orders.show', $order) }}"
+                                           class="inline-flex h-7 w-7 items-center justify-center rounded-lg text-muted transition hover:bg-brand/10 hover:text-brand"
+                                           title="View Order Details">
+                                            <i class="fa-solid fa-arrow-right text-xs"></i>
+                                        </a>
+                                    </div>
                                 </td>
                             </tr>
                         @endforeach
@@ -359,41 +330,33 @@
                                 @can('manage-orders')
                                     <form method="POST" action="{{ route('orders.status', $order) }}" x-data x-ref="statusFormM{{ $order->id }}">
                                         @csrf
+                                        @method('PATCH')
                                         <select name="order_status"
                                                 x-on:change="$refs['statusFormM{{ $order->id }}'].submit()"
-                                                class="rounded-lg text-xs font-semibold px-2 py-1 border">
-                                            @foreach (\App\Enums\OrderStatus::cases() as $st)
-                                                @continue($st === \App\Enums\OrderStatus::Cancelled && ! auth()->user()->isAdmin())
-                                                <option value="{{ $st->value }}" @selected($order->order_status === $st)>
-                                                    {{ $st->label() }}
-                                                </option>
-                                            @endforeach
+                                                class="rounded-lg text-xs font-bold px-2 py-1 border shadow-xs {{ $order->order_status === \App\Enums\OrderStatus::Delivered ? '!bg-emerald-600 !text-white !border-emerald-600' : ($order->order_status === \App\Enums\OrderStatus::Cancelled ? '!bg-red-600 !text-white !border-red-600' : '!bg-amber-100 !text-amber-800 !border-amber-300') }}">
+                                            <option value="new" @selected(!in_array($order->order_status, [\App\Enums\OrderStatus::Delivered, \App\Enums\OrderStatus::Cancelled])) class="bg-white text-ink">Pending</option>
+                                            <option value="delivered" @selected($order->order_status === \App\Enums\OrderStatus::Delivered) class="bg-white text-ink">Delivered</option>
+                                            <option value="cancelled" @selected($order->order_status === \App\Enums\OrderStatus::Cancelled) class="bg-white text-ink">Cancelled</option>
                                         </select>
                                     </form>
                                 @else
                                     <x-status-pill :status="$order->order_status" />
                                 @endcan
-
-                                @can('update', $order)
-                                    <form method="POST" action="{{ route('orders.payment', $order) }}" x-data x-ref="payFormM{{ $order->id }}">
-                                        @csrf
-                                        <select name="payment_status"
-                                                x-on:change="$refs['payFormM{{ $order->id }}'].submit()"
-                                                class="rounded-lg text-xs font-semibold px-2 py-1 border">
-                                            @foreach (\App\Enums\PaymentStatus::cases() as $pst)
-                                                <option value="{{ $pst->value }}" @selected($order->payment_status === $pst)>
-                                                    {{ $pst->label() }}
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                    </form>
-                                @else
-                                    <x-status-pill :status="$order->payment_status" />
-                                @endcan
                             </div>
-                            <a href="{{ route('orders.show', $order) }}" class="text-xs font-semibold text-brand hover:underline">
-                                Details &rarr;
-                            </a>
+                            <div class="flex items-center gap-3">
+                                <button type="button"
+                                        data-copy-btn="true"
+                                        x-data="{ copied: false, text: @js($order->copyDetailsText()) }"
+                                        x-on:click="window.copyOrderToClipboard(text); copied = true; setTimeout(() => copied = false, 2000)"
+                                        class="inline-flex items-center gap-1 text-xs font-semibold text-muted hover:text-brand"
+                                        :class="{ '!text-emerald-600': copied }">
+                                    <i class="fa-solid" :class="copied ? 'fa-check' : 'fa-copy'"></i>
+                                    <span x-text="copied ? 'Copied!' : 'Copy'"></span>
+                                </button>
+                                <a href="{{ route('orders.show', $order) }}" class="text-xs font-semibold text-brand hover:underline">
+                                    Details &rarr;
+                                </a>
+                            </div>
                         </div>
                     </div>
                 @endforeach

@@ -127,6 +127,15 @@ class RolePermissionTest extends TestCase
         $this->assertDatabaseHas('orders', ['id' => $order->id, 'deleted_at' => null]);
     }
 
+    public function test_a_manager_cannot_export_data(): void
+    {
+        $manager = User::factory()->manager()->create();
+
+        $this->actingAs($manager)->get(route('orders.export'))->assertForbidden();
+        $this->actingAs($manager)->get(route('customers.export'))->assertForbidden();
+        $this->actingAs($manager)->get(route('products.export'))->assertForbidden();
+    }
+
     public function test_manager_order_cancellation_is_off_until_an_admin_enables_it(): void
     {
         $manager = User::factory()->manager()->create();

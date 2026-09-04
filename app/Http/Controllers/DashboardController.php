@@ -33,15 +33,19 @@ class DashboardController extends Controller
 
     private function managementDashboard(Request $request, $from, $to, string $label, string $preset)
     {
-        $today = today();
+        $today    = today();
+        $tomorrow = today()->addDay();
 
         return view('dashboard.index', [
             'range'        => compact('from', 'to', 'label', 'preset'),
             'presets'      => DateRangeService::presets(),
             'kpis'         => $this->sales->kpis($from, $to),
             'trend'        => $this->sales->trend($from, $to),
-            'today'        => $this->deliveries->daySummary($today),
-            'upcoming'     => $this->deliveries->upcoming(7),
+            'today'          => $this->deliveries->daySummary($today),
+            'tomorrow'       => $this->deliveries->daySummary($tomorrow),
+            'tomorrowOrders' => $this->deliveries->ordersForDate($tomorrow)->get(),
+            'todayOrders'    => $this->deliveries->ordersForDate($today)->get(),
+            'upcoming'       => $this->deliveries->upcoming(7),
             'overdue'      => $this->deliveries->overdueCount(),
             'pending'      => $this->deliveries->pendingCount(),
             'performance'  => $this->deliveries->performance($from, $to),
@@ -64,32 +68,87 @@ class DashboardController extends Controller
     }
 
     /**
-     * The restricted dashboard: business-level totals and trend only. No
-     * customer records, no ZIP detail, no per-person performance
-     * (requirements 36 / 45 / 56).
+     * The Sales Person dashboard:
+     *  - Daily sales target progress (how many orders to achieve today).
+     *  - Volume stats (Today, This Week, This Month, Items Sold) with NO price or revenue numbers.
+     *  - Sales Leaderboard (Daily, Weekly, Monthly) across active sales persons.
+     *  - Recent assigned orders (products, statuses, delivery dates) with NO customer PII or price info.
      */
     private function salesPersonDashboard(Request $request, $from, $to, string $label, string $preset)
     {
-        $kpis = $this->sales->kpis($from, $to);
-        $myPerf = $this->sales->salesPersonPerformance($from, $to)
-            ->firstWhere('id', $request->user()->id);
+        $user = $request->user();
+        $dailyTarget = max(1, (int) \App\Models\Setting::get('daily_sales_target', 5));
+
+        $todayOrdersCount = \App\Models\Order::query()
+            ->where('sales_person_id', $user->id)
+            ->whereDate('order_created_at', today())
+            ->where('order_status', '!=', \App\Enums\OrderStatus::Cancelled->value)
+            ->count();
+
+        $weekOrdersCount = \App\Models\Order::query()
+            ->where('sales_person_id', $user->id)
+            ->whereBetween('order_created_at', [now()->startOfWeek(), now()->endOfWeek()])
+            ->where('order_status', '!=', \App\Enums\OrderStatus::Cancelled->value)
+            ->count();
+
+        $monthOrdersCount = \App\Models\Order::query()
+            ->where('sales_person_id', $user->id)
+            ->whereBetween('order_created_at', [now()->startOfMonth(), now()->endOfMonth()])
+            ->where('order_status', '!=', \App\Enums\OrderStatus::Cancelled->value)
+            ->count();
+
+        $monthItemsCount = (int) \App\Models\OrderItem::query()
+            ->whereHas('order', function ($q) use ($user) {
+                $q->where('sales_person_id', $user->id)
+                  ->whereBetween('order_created_at', [now()->startOfMonth(), now()->endOfMonth()])
+                  ->where('order_status', '!=', \App\Enums\OrderStatus::Cancelled->value);
+            })
+            ->sum('quantity');
+
+        $myOrders = \App\Models\Order::query()
+            ->where('sales_person_id', $user->id)
+            ->with(['items'])
+            ->orderByDesc('order_created_at')
+            ->take(12)
+            ->get();
+
+        $leaderboardToday = $this->getLeaderboard(today()->startOfDay(), today()->endOfDay());
+        $leaderboardWeek  = $this->getLeaderboard(now()->startOfWeek(), now()->endOfWeek());
+        $leaderboardMonth = $this->getLeaderboard(now()->startOfMonth(), now()->endOfMonth());
 
         return view('dashboard.sales-person', [
-            'range'       => compact('from', 'to', 'label', 'preset'),
-            'presets'     => DateRangeService::presets(),
-            'kpis'        => $kpis,
-            'trend'       => $this->sales->trend($from, $to),
-            'topProducts' => $this->sales->topProducts($from, $to, 8, 'quantity'),
-            'colours'     => $this->sales->colourDemand($from, $to, 6),
-            'swatches'    => $this->swatches(),
-            // The signed-in user is allowed to see their own numbers for the selected period.
-            'mine'        => $myPerf ?: (object) [
-                'id'        => $request->user()->id,
-                'name'      => $request->user()->name,
-                'orders'    => 0,
-                'revenue'   => 0.0,
-                'avg_order' => 0.0,
-            ],
+            'user'               => $user,
+            'dailyTarget'        => $dailyTarget,
+            'todayOrdersCount'   => $todayOrdersCount,
+            'targetAchievedPct'  => min(100, (int) round(($todayOrdersCount / $dailyTarget) * 100)),
+            'remainingToTarget'  => max(0, $dailyTarget - $todayOrdersCount),
+            'weekOrdersCount'    => $weekOrdersCount,
+            'monthOrdersCount'   => $monthOrdersCount,
+            'monthItemsCount'    => $monthItemsCount,
+            'myOrders'           => $myOrders,
+            'leaderboardToday'   => $leaderboardToday,
+            'leaderboardWeek'    => $leaderboardWeek,
+            'leaderboardMonth'   => $leaderboardMonth,
+            'topProducts'        => $this->sales->topProducts($from, $to, 6, 'quantity'),
+            'colours'            => $this->sales->colourDemand($from, $to, 6),
+            'swatches'           => $this->swatches(),
         ]);
+    }
+
+    private function getLeaderboard($from, $to)
+    {
+        return \App\Models\User::query()
+            ->where('role', \App\Enums\UserRole::SalesPerson)
+            ->where('is_active', true)
+            ->leftJoin('orders', function ($join) use ($from, $to) {
+                $join->on('orders.sales_person_id', '=', 'users.id')
+                    ->where('orders.order_status', '!=', \App\Enums\OrderStatus::Cancelled->value)
+                    ->whereBetween('orders.order_created_at', [$from, $to]);
+            })
+            ->selectRaw('users.id, users.name, COUNT(orders.id) as orders_count')
+            ->groupBy('users.id', 'users.name')
+            ->orderByDesc('orders_count')
+            ->orderBy('users.name')
+            ->get();
     }
 }

@@ -25,6 +25,20 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.2/chart.umd.min.js"></script>
 
     <style>[x-cloak]{display:none !important;}</style>
+    @auth
+        @if (!auth()->user()->isAdmin())
+            <style>
+                /* Prevent text selection and copying of customer/order data for non-admins */
+                table, table tbody, .ta-card, .protect-copy {
+                    -webkit-user-select: none !important;
+                    -moz-user-select: none !important;
+                    -ms-user-select: none !important;
+                    user-select: none !important;
+                    -webkit-touch-callout: none !important;
+                }
+            </style>
+        @endif
+    @endauth
     @stack('head')
 </head>
 <body class="font-sans">
@@ -138,6 +152,62 @@
         });
 
         resetTimers();
+    })();
+    </script>
+    @endif
+    <script>
+    window.copyOrderToClipboard = function(text) {
+        if (navigator.clipboard && window.isSecureContext) {
+            return navigator.clipboard.writeText(text);
+        } else {
+            var textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed';
+            textarea.style.left = '-999999px';
+            textarea.style.top = '-999999px';
+            document.body.appendChild(textarea);
+            textarea.focus();
+            textarea.select();
+            return new Promise(function(resolve, reject) {
+                document.execCommand('copy') ? resolve() : reject();
+                textarea.remove();
+            });
+        }
+    };
+    </script>
+    @if (!auth()->user()->isAdmin())
+    <script>
+    (function () {
+        // Prevent copying, cutting, and context menu on tables and customer/order cards for non-admin users
+        document.addEventListener('copy', function (e) {
+            var target = e.target;
+            if (target && target.closest('[data-copy-btn]')) return;
+            if (target && (target.closest('table') || target.closest('.ta-card') || target.closest('.protect-copy'))) {
+                e.preventDefault();
+                if (e.clipboardData) {
+                    e.clipboardData.setData('text/plain', '');
+                }
+                return false;
+            }
+        });
+
+        document.addEventListener('cut', function (e) {
+            var target = e.target;
+            if (target && target.closest('[data-copy-btn]')) return;
+            if (target && (target.closest('table') || target.closest('.ta-card') || target.closest('.protect-copy'))) {
+                e.preventDefault();
+                return false;
+            }
+        });
+
+        document.addEventListener('contextmenu', function (e) {
+            var target = e.target;
+            if (target && target.closest('[data-copy-btn]')) return;
+            if (target && (target.closest('table') || target.closest('.ta-card') || target.closest('.protect-copy'))) {
+                e.preventDefault();
+                return false;
+            }
+        });
     })();
     </script>
     @endif

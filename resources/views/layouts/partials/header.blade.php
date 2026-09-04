@@ -27,14 +27,26 @@
         <div class="flex items-center gap-2 sm:gap-3">
 
             @can('manage-deliveries')
-                <a href="{{ route('deliveries.index') }}"
-                   class="hidden items-center gap-2 rounded-full border border-line px-3 py-2 text-sm
-                          font-medium text-ink transition hover:bg-surface dark:border-strokedark
-                          dark:text-gray-300 dark:hover:bg-boxdark md:inline-flex"
-                   title="Deliveries scheduled for today">
-                    <i class="fa-solid fa-truck text-brand"></i>
-                    <span>Today</span>
-                    <span class="ta-badge bg-brand-50 text-brand">{{ $todayDeliveryCount ?? 0 }}</span>
+                @php
+                    $tomorrowCount = (int) ($tomorrowDeliveryCount ?? 0);
+                @endphp
+                <a href="{{ route('deliveries.index', ['date' => today()->addDay()->toDateString()]) }}"
+                   class="relative inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-semibold transition {{ $tomorrowCount > 0 ? 'border-red-300 bg-red-50 text-red-700 shadow-sm hover:bg-red-100 hover:border-red-400 dark:border-red-900/80 dark:bg-red-950/40 dark:text-red-300' : 'border-line text-ink hover:bg-surface dark:border-strokedark dark:text-gray-300 dark:hover:bg-boxdark' }}"
+                   title="{{ $tomorrowCount > 0 ? 'Reminder: ' . $tomorrowCount . ' order(s) due for delivery tomorrow!' : 'Deliveries scheduled for tomorrow' }}">
+                    @if ($tomorrowCount > 0)
+                        {{-- Blinking Red Light Indicator --}}
+                        <span class="relative flex h-2.5 w-2.5">
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-600"></span>
+                        </span>
+                        <i class="fa-solid fa-truck-fast text-red-600 dark:text-red-400 animate-pulse"></i>
+                    @else
+                        <i class="fa-solid fa-truck text-muted"></i>
+                    @endif
+                    <span class="hidden sm:inline">Tomorrow</span>
+                    <span class="ta-badge {{ $tomorrowCount > 0 ? '!bg-red-600 !text-white font-black shadow-xs' : 'bg-surface text-muted dark:bg-boxdark dark:text-gray-400' }}">
+                        {{ $tomorrowCount }}
+                    </span>
                 </a>
             @endcan
 

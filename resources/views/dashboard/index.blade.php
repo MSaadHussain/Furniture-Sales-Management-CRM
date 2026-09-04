@@ -14,29 +14,148 @@
 
     <x-date-range :range="$range" :presets="$presets" class="!p-3 sm:!p-3.5" />
 
-    {{-- ============================ Row 1: KPI Cards ============================ --}}
+    {{-- ============================ Row 1: Delivery Operations ============================ --}}
+    <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        {{-- 1. Tomorrow's (Next Day's) Deliveries Card --}}
+        <div class="rounded-2xl border border-line bg-white p-4.5 shadow-xs dark:border-strokedark dark:bg-boxdark">
+            <div class="flex items-center justify-between border-b border-line/60 pb-3 mb-3 dark:border-strokedark">
+                <div class="flex items-center gap-2.5">
+                    <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-purple-500/15 text-purple-600 dark:text-purple-400 text-sm font-bold">
+                        <i class="fa-solid fa-calendar-day"></i>
+                    </span>
+                    <div>
+                        <div class="flex items-center gap-1.5">
+                            <span class="text-xs font-black uppercase tracking-wider text-purple-600 dark:text-purple-400">Tomorrow's Deliveries</span>
+                            <span class="rounded-full bg-purple-500/10 px-2 py-0.5 text-[10px] font-bold text-purple-600 dark:text-purple-400">Next Day</span>
+                        </div>
+                        <p class="text-xs text-muted font-medium">{{ $tomorrow['date']->format('l, d M Y') }}</p>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <span class="text-base font-black text-purple-600 dark:text-purple-400"><x-money :amount="$tomorrow['value']" compact /></span>
+                    <span class="block text-[11px] text-muted">{{ $tomorrow['scheduled'] }} order{{ $tomorrow['scheduled'] === 1 ? '' : 's' }}</span>
+                </div>
+            </div>
+
+            {{-- Detailed Orders List for Tomorrow --}}
+            <div class="space-y-2.5">
+                @forelse ($tomorrowOrders as $order)
+                    <div class="flex items-start justify-between gap-3 rounded-xl border border-line/70 bg-surface/40 p-3 text-xs transition hover:border-purple-400 hover:bg-surface dark:border-strokedark dark:bg-boxdark2">
+                        <div class="min-w-0 space-y-1">
+                            <div class="flex items-center gap-2">
+                                <a href="{{ route('orders.show', $order) }}" class="font-bold text-brand hover:underline">
+                                    {{ $order->order_number }}
+                                </a>
+                                <x-status-pill :status="$order->order_status" />
+                            </div>
+                            <p class="font-bold text-ink dark:text-white truncate">
+                                {{ $order->customer?->name ?? 'Unknown' }}
+                                <span class="text-[11px] font-normal text-muted">({{ $order->customer?->phone }}@if($order->zip_code) &middot; {{ $order->zip_code }}@endif)</span>
+                            </p>
+                            <p class="text-[11px] text-muted truncate max-w-[320px]" title="{{ $order->itemSummary(5) }}">
+                                <i class="fa-solid fa-couch text-[9px] text-muted mr-1"></i>{{ $order->itemSummary(3) }}
+                            </p>
+                        </div>
+                        <div class="text-right flex-shrink-0">
+                            <span class="font-black text-ink dark:text-white block text-sm"><x-money :amount="$order->grand_total" /></span>
+                            <a href="{{ route('orders.show', $order) }}" class="inline-flex items-center gap-1 text-[11px] font-semibold text-brand hover:underline mt-1">
+                                View Order <i class="fa-solid fa-arrow-right text-[9px]"></i>
+                            </a>
+                        </div>
+                    </div>
+                @empty
+                    <div class="rounded-xl border border-dashed border-line/80 py-5 text-center dark:border-strokedark">
+                        <p class="text-xs text-muted font-medium">No deliveries scheduled for tomorrow.</p>
+                        <a href="{{ route('deliveries.index', ['date' => $tomorrow['date']->toDateString()]) }}" class="mt-1 inline-block text-xs font-semibold text-brand hover:underline">
+                            View Deliveries &rarr;
+                        </a>
+                    </div>
+                @endforelse
+            </div>
+        </div>
+
+        {{-- 2. Today's Deliveries Card --}}
+        <div class="rounded-2xl border border-line bg-white p-4.5 shadow-xs dark:border-strokedark dark:bg-boxdark">
+            <div class="flex items-center justify-between border-b border-line/60 pb-3 mb-3 dark:border-strokedark">
+                <div class="flex items-center gap-2.5">
+                    <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-brand/15 text-brand text-sm font-bold">
+                        <i class="fa-solid fa-truck-fast"></i>
+                    </span>
+                    <div>
+                        <div class="flex items-center gap-1.5">
+                            <span class="text-xs font-black uppercase tracking-wider text-brand">Today's Deliveries</span>
+                            <span class="rounded-full bg-brand/10 px-2 py-0.5 text-[10px] font-bold text-brand">Today</span>
+                        </div>
+                        <p class="text-xs text-muted font-medium">{{ $today['date']->format('l, d M Y') }}</p>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <span class="text-base font-black text-brand"><x-money :amount="$today['value']" compact /></span>
+                    <span class="block text-[11px] text-muted">{{ $today['scheduled'] }} order{{ $today['scheduled'] === 1 ? '' : 's' }}</span>
+                </div>
+            </div>
+
+            {{-- Detailed Orders List for Today --}}
+            <div class="space-y-2.5">
+                @forelse ($todayOrders as $order)
+                    <div class="flex items-start justify-between gap-3 rounded-xl border border-line/70 bg-surface/40 p-3 text-xs transition hover:border-brand hover:bg-surface dark:border-strokedark dark:bg-boxdark2">
+                        <div class="min-w-0 space-y-1">
+                            <div class="flex items-center gap-2">
+                                <a href="{{ route('orders.show', $order) }}" class="font-bold text-brand hover:underline">
+                                    {{ $order->order_number }}
+                                </a>
+                                <x-status-pill :status="$order->order_status" />
+                            </div>
+                            <p class="font-bold text-ink dark:text-white truncate">
+                                {{ $order->customer?->name ?? 'Unknown' }}
+                                <span class="text-[11px] font-normal text-muted">({{ $order->customer?->phone }}@if($order->zip_code) &middot; {{ $order->zip_code }}@endif)</span>
+                            </p>
+                            <p class="text-[11px] text-muted truncate max-w-[320px]" title="{{ $order->itemSummary(5) }}">
+                                <i class="fa-solid fa-couch text-[9px] text-muted mr-1"></i>{{ $order->itemSummary(3) }}
+                            </p>
+                        </div>
+                        <div class="text-right flex-shrink-0">
+                            <span class="font-black text-ink dark:text-white block text-sm"><x-money :amount="$order->grand_total" /></span>
+                            <a href="{{ route('orders.show', $order) }}" class="inline-flex items-center gap-1 text-[11px] font-semibold text-brand hover:underline mt-1">
+                                View Order <i class="fa-solid fa-arrow-right text-[9px]"></i>
+                            </a>
+                        </div>
+                    </div>
+                @empty
+                    <div class="rounded-xl border border-dashed border-line/80 py-5 text-center dark:border-strokedark">
+                        <p class="text-xs text-muted font-medium">No deliveries scheduled for today.</p>
+                        <a href="{{ route('deliveries.index', ['date' => $today['date']->toDateString()]) }}" class="mt-1 inline-block text-xs font-semibold text-brand hover:underline">
+                            View Deliveries &rarr;
+                        </a>
+                    </div>
+                @endforelse
+            </div>
+        </div>
+    </div>
+
+    {{-- ============================ Row 2: Clean KPI Summary Cards ============================ --}}
     <div class="grid grid-cols-1 gap-3.5 sm:grid-cols-2 xl:grid-cols-4">
-        <x-stat-card label="Orders in period" icon="fa-receipt" icon-color="#465FFF"
+        <x-stat-card label="Total Orders" icon="fa-receipt" icon-color="#465FFF"
                      :value="number_format($kpis['orders'])"
                      :delta="\App\Services\DateRangeService::growthLabel($kpis['orders_growth'])"
                      :delta-up="($kpis['orders_growth'] ?? 0) >= 0"
                      :hint="number_format($kpis['total_orders']) . ' all time'" />
 
-        <x-stat-card label="Revenue in period" icon="fa-sack-dollar" icon-color="#12B76A"
+        <x-stat-card label="Total Sales" icon="fa-sack-dollar" icon-color="#12B76A"
                      :value="\App\Support\Money::compact($kpis['revenue'])"
                      :delta="\App\Services\DateRangeService::growthLabel($kpis['revenue_growth'])"
                      :delta-up="($kpis['revenue_growth'] ?? 0) >= 0"
                      :hint="\App\Support\Money::compact($kpis['total_revenue']) . ' all time'" />
 
-        <x-stat-card label="Average order value" icon="fa-scale-balanced" icon-color="#7A5AF8"
+        <x-stat-card label="Average Order" icon="fa-scale-balanced" icon-color="#7A5AF8"
                      :value="\App\Support\Money::compact($kpis['avg_order_value'])"
                      :hint="number_format($kpis['items_sold']) . ' items sold'" />
 
-        <x-stat-card label="Customers" icon="fa-users" icon-color="#F79009"
+        <x-stat-card label="Total Customers" icon="fa-users" icon-color="#F79009"
                      :value="number_format($kpis['total_customers'])"
                      :delta="\App\Services\DateRangeService::growthLabel($kpis['new_customers_growth'])"
                      :delta-up="($kpis['new_customers_growth'] ?? 0) >= 0"
-                     :hint="number_format($kpis['new_customers']) . ' new this period'"
+                     :hint="number_format($kpis['new_customers']) . ' new'"
                      :href="Gate::allows('view-customers') ? route('customers.index') : null" />
     </div>
 

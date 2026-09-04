@@ -49,8 +49,11 @@ class OrderService
             ]);
 
             $order->order_number = $this->numbers->next();
-            // Order creation date is stamped by the system, never by the form.
-            $order->order_created_at = now();
+            $orderCreatedAt = ! empty($data['order_created_at'])
+                ? Carbon::parse($data['order_created_at'])->setTimeFrom(now())
+                : now();
+            $order->order_created_at = $orderCreatedAt;
+            $order->created_at       = $orderCreatedAt;
             $order->save();
 
             $this->syncItems($order, $data['items'] ?? []);
@@ -75,6 +78,7 @@ class OrderService
                     'customer'                => $customer->name,
                     'grand_total'             => (string) $order->grand_total,
                     'requested_delivery_date' => $order->requested_delivery_date->toDateString(),
+                    'order_created_at'        => $order->order_created_at->toDateString(),
                     'items'                   => $order->items()->count(),
                 ],
             );
@@ -104,6 +108,12 @@ class OrderService
                 'notes'                   => $data['notes'] ?? null,
                 'updated_by'              => Auth::id(),
             ]);
+
+            if (! empty($data['order_created_at'])) {
+                $orderCreatedAt = Carbon::parse($data['order_created_at'])->setTimeFrom($order->order_created_at ?? now());
+                $order->order_created_at = $orderCreatedAt;
+                $order->created_at       = $orderCreatedAt;
+            }
 
             if (! empty($data['order_status'])) {
                 $order->order_status = OrderStatus::from($data['order_status']);
@@ -149,8 +159,24 @@ class OrderService
         $order->updated_by   = Auth::id();
 
         // Marking an order delivered without a date stamps today (requirements 14.4).
-        if ($status === OrderStatus::Delivered && ! $order->actual_delivery_date) {
-            $order->actual_delivery_date = today();
+        if ($status === OrderStatus::Delivered) {
+            if (! $order->actual_delivery_date) {
+                $order->actual_delivery_date = today();
+            }
+            $order->payment_status = PaymentStatus::Paid;
+            $order->amount_paid    = (float) $order->grand_total;
+            $order->balance_due    = 0.0;
+        } elseif ($status === OrderStatus::Cancelled) {
+            $order->actual_delivery_date = null;
+            $order->payment_status       = PaymentStatus::Refunded;
+            $order->amount_paid          = 0.0;
+            $order->balance_due          = (float) $order->grand_total;
+        } else {
+            // If moved away from Delivered back to Pending or other status
+            $order->actual_delivery_date = null;
+            $order->payment_status       = PaymentStatus::Pending;
+            $order->amount_paid          = 0.0;
+            $order->balance_due          = (float) $order->grand_total;
         }
 
         $order->save();
@@ -197,6 +223,9 @@ class OrderService
 
         $order->actual_delivery_date = $deliveredOn;
         $order->order_status         = OrderStatus::Delivered;
+        $order->payment_status       = PaymentStatus::Paid;
+        $order->amount_paid          = (float) $order->grand_total;
+        $order->balance_due          = 0.0;
         $order->updated_by           = Auth::id();
         $order->save();
 
@@ -223,9 +252,13 @@ class OrderService
     {
         $previous = $order->order_status;
 
-        $order->order_status        = OrderStatus::Cancelled;
-        $order->cancellation_reason = $reason;
-        $order->updated_by          = Auth::id();
+        $order->order_status         = OrderStatus::Cancelled;
+        $order->actual_delivery_date = null;
+        $order->payment_status       = PaymentStatus::Refunded;
+        $order->amount_paid          = 0.0;
+        $order->balance_due          = (float) $order->grand_total;
+        $order->cancellation_reason  = $reason;
+        $order->updated_by           = Auth::id();
         $order->save();
 
         $this->audit->log(
@@ -406,15 +439,14 @@ class OrderService
 
         $grandTotal = round($subtotal - $orderDiscount + $deliveryCharge + $tax, 2);
 
-        $paymentStatus = ! empty($data['payment_status'])
-            ? PaymentStatus::from($data['payment_status'])
-            : ($order->payment_status ?? PaymentStatus::Pending);
+        $isDelivered = ($order->order_status === OrderStatus::Delivered) || ! empty($data['actual_delivery_date']);
+        $isCancelled = ($order->order_status === OrderStatus::Cancelled);
 
-        $amountPaid = $this->resolveAmountPaid(
-            $paymentStatus,
-            isset($data['amount_paid']) ? Money::parse($data['amount_paid']) : null,
-            $grandTotal,
-        );
+        $paymentStatus = $isDelivered
+            ? PaymentStatus::Paid
+            : ($isCancelled ? PaymentStatus::Refunded : PaymentStatus::Pending);
+
+        $amountPaid = $paymentStatus === PaymentStatus::Paid ? $grandTotal : 0.0;
 
         $order->subtotal        = $subtotal;
         $order->discount        = $orderDiscount;

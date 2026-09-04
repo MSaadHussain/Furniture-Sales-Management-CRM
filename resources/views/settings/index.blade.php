@@ -80,7 +80,7 @@
         </x-card>
 
         <x-card title="Defaults" subtitle="Starting values for new screens and orders">
-            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <div>
                     <label class="ta-label">Default dashboard period</label>
                     <select name="default_date_range" class="ta-input">
@@ -91,10 +91,16 @@
                     </select>
                 </div>
                 <div>
-                    <label class="ta-label">Default delivery lead time (days)</label>
+                    <label class="ta-label">Default lead time (days)</label>
                     <input type="number" name="default_delivery_lead_days" min="0" max="365"
                            value="{{ old('default_delivery_lead_days', $settings['default_delivery_lead_days']) }}" class="ta-input">
-                    <p class="mt-1 text-xs text-muted">Pre-fills the requested delivery date on a new order.</p>
+                    <p class="mt-1 text-xs text-muted">Pre-fills requested delivery date.</p>
+                </div>
+                <div>
+                    <label class="ta-label">Daily Target (orders/day)</label>
+                    <input type="number" name="daily_sales_target" min="1" max="1000"
+                           value="{{ old('daily_sales_target', $settings['daily_sales_target']) }}" class="ta-input">
+                    <p class="mt-1 text-xs text-muted">Target per sales person.</p>
                 </div>
             </div>
         </x-card>
@@ -133,6 +139,21 @@
                 </a>
             </div>
         </x-card>
+
+        @if (auth()->user()->isAdmin())
+            <div class="rounded-2xl border border-danger/30 bg-danger/5 p-4 dark:border-danger/40 dark:bg-danger/10">
+                <div class="flex items-center gap-2 text-xs font-bold text-danger uppercase tracking-wider mb-1.5">
+                    <i class="fa-solid fa-triangle-exclamation"></i> Danger Zone
+                </div>
+                <p class="text-xs text-ink/80 dark:text-gray-300 mb-3">
+                    Permanently wipe all operational data (orders, customers, and analytics) with multi-step confirmation and password verification.
+                </p>
+                <a href="{{ route('settings.reset') }}"
+                   class="inline-flex items-center justify-center gap-2 w-full rounded-xl bg-danger hover:bg-danger/90 text-white font-bold text-xs px-3.5 py-2 transition shadow-xs">
+                    <i class="fa-solid fa-trash-can"></i> Reset All Data
+                </a>
+            </div>
+        @endif
     </div>
 </form>
 @endsection

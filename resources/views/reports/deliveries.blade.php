@@ -49,11 +49,9 @@
                 <label class="ta-label">Order status</label>
                 <select name="order_status" class="ta-input">
                     <option value="">All</option>
-                    @foreach ($statuses as $status)
-                        <option value="{{ $status->value }}" @selected(($filters['order_status'] ?? '') === $status->value)>
-                            {{ $status->label() }}
-                        </option>
-                    @endforeach
+                    <option value="new" @selected(($filters['order_status'] ?? '') === 'new')>Pending</option>
+                    <option value="delivered" @selected(($filters['order_status'] ?? '') === 'delivered')>Delivered</option>
+                    <option value="cancelled" @selected(($filters['order_status'] ?? '') === 'cancelled')>Cancelled</option>
                 </select>
             </div>
             <button type="submit" class="btn btn-primary"><i class="fa-solid fa-filter"></i> Apply</button>

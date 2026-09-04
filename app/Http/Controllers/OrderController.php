@@ -149,7 +149,6 @@ class OrderController extends Controller implements HasMiddleware
 
         // Cancelling has its own audit trail and reason, so route it there.
         if ($status === OrderStatus::Cancelled) {
-            $this->authorize('cancel', $order);
             $this->orders->cancel($order, $request->input('cancellation_reason'));
 
             return back()->with('toast', "Order {$order->order_number} cancelled.");
@@ -234,7 +233,7 @@ class OrderController extends Controller implements HasMiddleware
             ->map(fn ($o) => [
                 'id'                      => $o->id,
                 'order_number'            => $o->order_number,
-                'created_at'              => $o->order_created_at?->format('d M Y h:i A'),
+                'created_at'              => $o->order_created_at?->format('d M Y h:i A') ?? $o->created_at?->format('d M Y h:i A'),
                 'requested_delivery_date' => $o->requested_delivery_date?->format('d M Y'),
                 'order_status'            => $o->order_status->label(),
                 'payment_status'          => $o->payment_status->label(),
@@ -249,6 +248,10 @@ class OrderController extends Controller implements HasMiddleware
                 ]),
             ]);
 
+        $stats = $customer->orders()
+            ->selectRaw('COUNT(*) as total_orders, COALESCE(SUM(grand_total), 0) as total_spent, MAX(order_created_at) as last_order')
+            ->first();
+
         return response()->json([
             'found'    => true,
             'customer' => [
@@ -261,9 +264,9 @@ class OrderController extends Controller implements HasMiddleware
                 'state'    => $customer->state,
                 'zip_code' => $customer->zip_code,
             ],
-            'orders'       => $customer->orderCount(),
-            'total_spent'  => Money::format($customer->totalSpent()),
-            'last_order'   => $customer->lastOrderAt()?->format('d M Y'),
+            'orders'       => (int) ($stats->total_orders ?? 0),
+            'total_spent'  => Money::format((float) ($stats->total_spent ?? 0)),
+            'last_order'   => !empty($stats->last_order) ? Carbon::parse($stats->last_order)->format('d M Y') : null,
             'orders_list'  => $orders,
             'url'          => route('customers.show', $customer),
         ]);

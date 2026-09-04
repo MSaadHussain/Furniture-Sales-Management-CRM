@@ -60,10 +60,11 @@ class StoreOrderRequest extends FormRequest
                     ->where('role', UserRole::SalesPerson->value)
                     ->whereNull('deleted_at'),
             ],
-            'requested_delivery_date' => ['required', 'date', 'after_or_equal:today'],
+            'order_created_at'        => ['nullable', 'date'],
+            'requested_delivery_date' => ['required', 'date'],
             'actual_delivery_date'    => ['nullable', 'date'],
             'order_status'            => ['nullable', Rule::in(array_column(OrderStatus::cases(), 'value'))],
-            'payment_status'          => ['required', Rule::in(array_column(PaymentStatus::cases(), 'value'))],
+            'payment_status'          => ['nullable', Rule::in(array_column(PaymentStatus::cases(), 'value'))],
             'payment_method'          => ['nullable', Rule::in(array_column(PaymentMethod::cases(), 'value'))],
             'amount_paid'             => ['nullable', 'numeric', 'min:0'],
             'discount'                => ['nullable', 'numeric', 'min:0'],
@@ -130,14 +131,6 @@ class StoreOrderRequest extends FormRequest
 
             if ((float) $this->input('discount', 0) > $subtotal) {
                 $validator->errors()->add('discount', 'The order discount cannot be greater than the subtotal.');
-            }
-
-            // Partial payments need an amount that is neither nothing nor everything.
-            if ($this->input('payment_status') === PaymentStatus::Partial->value) {
-                $paid = (float) $this->input('amount_paid', 0);
-                if ($paid <= 0) {
-                    $validator->errors()->add('amount_paid', 'Enter the amount paid so far for a partial payment.');
-                }
             }
 
             // An actual delivery date may not sit in the future (34.4).

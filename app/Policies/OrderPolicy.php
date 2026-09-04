@@ -34,7 +34,7 @@ class OrderPolicy
 
     public function cancel(User $user, Order $order): bool
     {
-        return $user->can('cancel-orders') && $order->isEditable();
+        return $user->can('cancel-orders');
     }
 
     public function delete(User $user, Order $order): bool
@@ -55,6 +55,6 @@ class OrderPolicy
 
     public function changeStatus(User $user, Order $order): bool
     {
-        return $user->can('manage-orders') && $order->isEditable();
+        return $user->can('manage-orders');
     }
 }

@@ -5,6 +5,15 @@
 @endsection
 
 @section('header_actions')
+    <button type="button"
+            data-copy-btn="true"
+            x-data="{ copied: false, text: @js($order->copyDetailsText()) }"
+            x-on:click="window.copyOrderToClipboard(text); copied = true; setTimeout(() => copied = false, 2000)"
+            class="btn btn-light"
+            :class="{ '!bg-emerald-500/10 !text-emerald-600 !border-emerald-500/30': copied }">
+        <i class="fa-solid" :class="copied ? 'fa-check text-emerald-600' : 'fa-copy'"></i>
+        <span x-text="copied ? 'Copied Details!' : 'Copy Details'"></span>
+    </button>
     @can('update', $order)
         <a href="{{ route('orders.edit', $order) }}" class="btn btn-light">
             <i class="fa-solid fa-pen"></i> Edit
@@ -183,24 +192,17 @@
                         <span class="text-sm text-muted">Order status</span>
                         <x-status-pill :status="$order->order_status" />
                     </div>
-                    <div class="flex items-center justify-between">
-                        <span class="text-sm text-muted">Payment status</span>
-                        <x-status-pill :status="$order->payment_status" />
-                    </div>
 
                     @can('changeStatus', $order)
                         <form method="POST" action="{{ route('orders.status', $order) }}"
                               class="border-t border-line pt-4 dark:border-strokedark">
                             @csrf @method('PATCH')
-                            <label class="ta-label">Move to</label>
+                            <label class="ta-label">Change Status</label>
                             <div class="flex gap-2">
-                                <select name="order_status" class="ta-input">
-                                    @foreach (\App\Enums\OrderStatus::cases() as $status)
-                                        @continue($status === \App\Enums\OrderStatus::Cancelled)
-                                        <option value="{{ $status->value }}" @selected($order->order_status === $status)>
-                                            {{ $status->label() }}
-                                        </option>
-                                    @endforeach
+                                <select name="order_status" class="ta-input font-bold">
+                                    <option value="new" @selected(!in_array($order->order_status, [\App\Enums\OrderStatus::Delivered, \App\Enums\OrderStatus::Cancelled]))>Pending</option>
+                                    <option value="delivered" @selected($order->order_status === \App\Enums\OrderStatus::Delivered)>Delivered</option>
+                                    <option value="cancelled" @selected($order->order_status === \App\Enums\OrderStatus::Cancelled)>Cancelled</option>
                                 </select>
                                 <button type="submit" class="btn btn-primary">Update</button>
                             </div>
@@ -258,48 +260,9 @@
                 @endcan
             </x-card>
 
-            <x-card title="Payment">
-                <dl class="space-y-3 text-sm">
-                    <div class="flex justify-between"><dt class="text-muted">Grand total</dt><dd class="font-semibold text-ink dark:text-white"><x-money :amount="$order->grand_total" /></dd></div>
-                    <div class="flex justify-between"><dt class="text-muted">Amount paid</dt><dd class="text-success"><x-money :amount="$order->amount_paid" /></dd></div>
-                    <div class="flex justify-between"><dt class="text-muted">Balance due</dt><dd class="{{ (float) $order->balance_due > 0 ? 'text-danger' : 'text-muted' }}"><x-money :amount="$order->balance_due" /></dd></div>
-                    <div class="flex justify-between"><dt class="text-muted">Method</dt><dd class="text-ink dark:text-gray-200">{{ $order->payment_method?->label() ?? '--' }}</dd></div>
-                </dl>
-
-                @can('update', $order)
-                    <form method="POST" action="{{ route('orders.payment', $order) }}"
-                          x-data="{ status: '{{ $order->payment_status->value }}' }"
-                          class="mt-4 space-y-3 border-t border-line pt-4 dark:border-strokedark">
-                        @csrf @method('PATCH')
-                        <div>
-                            <label class="ta-label">Payment status</label>
-                            <select name="payment_status" x-model="status" class="ta-input">
-                                @foreach (\App\Enums\PaymentStatus::cases() as $status)
-                                    <option value="{{ $status->value }}">{{ $status->label() }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div>
-                            <label class="ta-label">Method</label>
-                            <select name="payment_method" class="ta-input">
-                                <option value="">Not recorded</option>
-                                @foreach (\App\Enums\PaymentMethod::cases() as $method)
-                                    <option value="{{ $method->value }}" @selected($order->payment_method === $method)>{{ $method->label() }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div x-show="status === 'partial'" x-cloak>
-                            <label class="ta-label">Amount paid</label>
-                            <input type="number" min="0" step="0.01" name="amount_paid"
-                                   value="{{ (float) $order->amount_paid }}" class="ta-input">
-                        </div>
-                        <button type="submit" class="btn btn-primary w-full">Save payment</button>
-                    </form>
-                @endcan
-            </x-card>
-
             <x-card title="Record">
                 <dl class="space-y-3 text-sm">
+                    <div class="flex justify-between"><dt class="text-muted">Grand total</dt><dd class="font-bold text-ink dark:text-white"><x-money :amount="$order->grand_total" /></dd></div>
                     <div class="flex justify-between"><dt class="text-muted">Sales Person</dt><dd class="text-ink dark:text-gray-200">{{ $order->salesPerson?->name ?? 'Not assigned' }}</dd></div>
                     <div class="flex justify-between"><dt class="text-muted">Entered by</dt><dd class="text-ink dark:text-gray-200">{{ $order->creator?->name ?? 'System' }}</dd></div>
                     <div class="flex justify-between"><dt class="text-muted">Last updated by</dt><dd class="text-ink dark:text-gray-200">{{ $order->updater?->name ?? '--' }}</dd></div>

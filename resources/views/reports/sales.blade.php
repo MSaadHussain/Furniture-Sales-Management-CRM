@@ -72,17 +72,6 @@
                     @endforeach
                 </select>
             </div>
-            <div>
-                <label class="ta-label">Payment status</label>
-                <select name="payment_status" class="ta-input">
-                    <option value="">All</option>
-                    @foreach ($paymentStatuses as $status)
-                        <option value="{{ $status->value }}" @selected(($filters['payment_status'] ?? '') === $status->value)>
-                            {{ $status->label() }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
             <div class="flex items-end gap-2 md:col-span-3 xl:col-span-6">
                 <button type="submit" class="btn btn-primary"><i class="fa-solid fa-filter"></i> Apply</button>
                 <a href="{{ route('reports.sales', request()->only(['range', 'from', 'to'])) }}" class="btn btn-light">Reset</a>
@@ -106,7 +95,6 @@
                             <th class="ta-th">ZIP</th>
                             <th class="ta-th">Sales Person</th>
                             <th class="ta-th text-right">Total</th>
-                            <th class="ta-th">Payment</th>
                             <th class="ta-th">Status</th>
                         </tr>
                     </thead>
@@ -125,7 +113,6 @@
                                 <td class="ta-td font-semibold">{{ $order->zip_code }}</td>
                                 <td class="ta-td">{{ $order->salesPerson?->name ?? '--' }}</td>
                                 <td class="ta-td text-right font-semibold"><x-money :amount="$order->grand_total" /></td>
-                                <td class="ta-td"><x-status-pill :status="$order->payment_status" /></td>
                                 <td class="ta-td"><x-status-pill :status="$order->order_status" /></td>
                             </tr>
                         @endforeach

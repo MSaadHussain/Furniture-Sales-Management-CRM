@@ -26,45 +26,36 @@ enum OrderStatus: string
     public function label(): string
     {
         return match ($this) {
-            self::New              => 'New',
-            self::Confirmed        => 'Confirmed',
-            self::Processing       => 'Processing',
-            self::ReadyForDelivery => 'Ready for Delivery',
-            self::OutForDelivery   => 'Out for Delivery',
-            self::Delivered        => 'Delivered',
-            self::Cancelled        => 'Cancelled',
-            self::Delayed          => 'Delayed',
-            self::Returned         => 'Returned',
+            self::Delivered                 => 'Delivered',
+            self::Cancelled, self::Returned => 'Cancelled',
+            default                         => 'Pending',
         };
     }
 
     public function color(): string
     {
         return match ($this) {
-            self::New              => '#667085',
-            self::Confirmed        => '#465FFF',
-            self::Processing       => '#7A5AF8',
-            self::ReadyForDelivery => '#F79009',
-            self::OutForDelivery   => '#06AED4',
-            self::Delivered        => '#12B76A',
-            self::Cancelled        => '#98A2B3',
-            self::Delayed          => '#F04438',
-            self::Returned         => '#DC6803',
+            self::Delivered                 => '#12B76A',
+            self::Cancelled, self::Returned => '#F04438',
+            default                         => '#F79009',
+        };
+    }
+
+    public function badgeClass(): string
+    {
+        return match ($this) {
+            self::Delivered                 => '!bg-emerald-600 !text-white font-bold !border-emerald-600 shadow-xs',
+            self::Cancelled, self::Returned => '!bg-red-600 !text-white font-bold !border-red-600 shadow-xs',
+            default                         => '!bg-amber-100 !text-amber-800 font-bold !border-amber-300 dark:!bg-amber-900/50 dark:!text-amber-200 dark:!border-amber-700',
         };
     }
 
     public function icon(): string
     {
         return match ($this) {
-            self::New              => 'fa-file-circle-plus',
-            self::Confirmed        => 'fa-circle-check',
-            self::Processing       => 'fa-screwdriver-wrench',
-            self::ReadyForDelivery => 'fa-box-open',
-            self::OutForDelivery   => 'fa-truck-fast',
-            self::Delivered        => 'fa-house-circle-check',
-            self::Cancelled        => 'fa-ban',
-            self::Delayed          => 'fa-clock',
-            self::Returned         => 'fa-rotate-left',
+            self::Delivered                 => 'fa-house-circle-check',
+            self::Cancelled, self::Returned => 'fa-ban',
+            default                         => 'fa-clock',
         };
     }
 

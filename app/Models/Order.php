@@ -176,4 +176,33 @@ class Order extends Model
 
         return (int) $items->sum('quantity');
     }
+
+    /**
+     * Formats order details for quick one-click clipboard copying.
+     */
+    public function copyDetailsText(): string
+    {
+        $customer = $this->relationLoaded('customer') ? $this->customer : $this->customer()->first();
+        $items    = $this->relationLoaded('items') ? $this->items : $this->items()->get();
+
+        $name  = $customer?->name ?? 'N/A';
+        $phone = $customer?->phone ?? 'N/A';
+
+        $addrParts = array_filter([
+            $customer?->address,
+            $customer?->city,
+            $customer?->state,
+            $customer?->zip_code ?: $this->zip_code,
+        ]);
+        $address = ! empty($addrParts) ? implode(', ', $addrParts) : ($this->zip_code ?: 'N/A');
+
+        $productList = $items->map(function (OrderItem $item) {
+            $col = $item->item_colour ? " ({$item->item_colour})" : '';
+            return "{$item->quantity}x {$item->item_name_snapshot}{$col}";
+        })->implode(', ');
+
+        $total = \App\Support\Money::format($this->grand_total);
+
+        return "Name: {$name}\nNumber: {$phone}\nAddress: {$address}\nProduct: {$productList}\nPrice Total: {$total}";
+    }
 }

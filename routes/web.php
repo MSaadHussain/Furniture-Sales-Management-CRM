@@ -39,10 +39,10 @@ Route::middleware(['auth', 'verified', 'password.24h', 'track.activity'])->group
     Route::get('orders/lookup/customers', [OrderController::class, 'searchCustomers'])->name('orders.lookup.customers');
     Route::get('orders/lookup/product/{product}', [OrderController::class, 'productDetails'])->name('orders.lookup.product');
     Route::resource('orders', OrderController::class);
-    Route::patch('orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.status');
-    Route::patch('orders/{order}/payment', [OrderController::class, 'updatePayment'])->name('orders.payment');
-    Route::patch('orders/{order}/deliver', [OrderController::class, 'recordDelivery'])->name('orders.deliver');
-    Route::patch('orders/{order}/cancel', [OrderController::class, 'cancel'])->name('orders.cancel');
+    Route::match(['post', 'patch'], 'orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.status');
+    Route::match(['post', 'patch'], 'orders/{order}/payment', [OrderController::class, 'updatePayment'])->name('orders.payment');
+    Route::match(['post', 'patch'], 'orders/{order}/deliver', [OrderController::class, 'recordDelivery'])->name('orders.deliver');
+    Route::match(['post', 'patch'], 'orders/{order}/cancel', [OrderController::class, 'cancel'])->name('orders.cancel');
 
     /*
     |----------------------------------------------------------------------
@@ -113,6 +113,8 @@ Route::middleware(['auth', 'verified', 'password.24h', 'track.activity'])->group
     Route::patch('settings', [SettingsController::class, 'update'])->name('settings.update');
     Route::get('settings/security', [SecurityController::class, 'index'])->name('settings.security');
     Route::patch('settings/security', [SecurityController::class, 'update'])->name('settings.security.update');
+    Route::get('settings/reset-data', [\App\Http\Controllers\SystemResetController::class, 'index'])->name('settings.reset');
+    Route::post('settings/reset-data', [\App\Http\Controllers\SystemResetController::class, 'reset'])->name('settings.reset.execute');
 
     Route::get('activity/logs', [ActivityController::class, 'logs'])->name('activity.logs');
     Route::get('activity/sessions', [ActivityController::class, 'sessions'])->name('activity.sessions');

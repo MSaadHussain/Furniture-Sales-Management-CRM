@@ -18,17 +18,15 @@
         <form method="GET" class="flex flex-wrap items-end gap-3">
             <div>
                 <label class="ta-label">Delivery date</label>
-                <input type="date" name="date" value="{{ $date->toDateString() }}" class="ta-input">
+                <input type="text" name="date" value="{{ $date->toDateString() }}" x-datepicker class="ta-input">
             </div>
             <div>
                 <label class="ta-label">Order status</label>
                 <select name="order_status" class="ta-input">
                     <option value="">All</option>
-                    @foreach ($statuses as $status)
-                        <option value="{{ $status->value }}" @selected(($filters['order_status'] ?? '') === $status->value)>
-                            {{ $status->label() }}
-                        </option>
-                    @endforeach
+                    <option value="new" @selected(($filters['order_status'] ?? '') === 'new')>Pending</option>
+                    <option value="delivered" @selected(($filters['order_status'] ?? '') === 'delivered')>Delivered</option>
+                    <option value="cancelled" @selected(($filters['order_status'] ?? '') === 'cancelled')>Cancelled</option>
                 </select>
             </div>
             <button type="submit" class="btn btn-primary">Show</button>
@@ -57,10 +55,11 @@
     </div>
 
     @if ($overdue > 0)
-        <div class="rounded-xl border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger">
+        <div class="rounded-xl border border-warning/40 bg-warning/10 p-4 text-sm text-warning">
             <i class="fa-solid fa-triangle-exclamation mr-1"></i>
-            <strong>{{ $overdue }}</strong> open order{{ $overdue === 1 ? '' : 's' }} across all dates are past their requested delivery date.
-            <a href="{{ route('reports.deliveries', ['performance' => 'pending']) }}" class="font-semibold underline">Review them</a>
+            {{ $overdue }} order{{ $overdue === 1 ? ' is' : 's are' }} overdue across the system.
+            <a href="{{ route('orders.index', ['performance' => 'pending', 'delivery_to' => today()->subDay()->toDateString()]) }}"
+               class="font-semibold underline hover:opacity-80">View overdue orders &rarr;</a>
         </div>
     @endif
 
@@ -74,18 +73,26 @@
                           : 'border border-line text-ink hover:bg-surface dark:border-strokedark dark:text-gray-300' }}">
                 All ({{ $summary['scheduled'] }})
             </a>
-            @foreach ($statuses as $status)
-                @continue(($summary['by_status'][$status->value] ?? 0) === 0)
-                <a href="{{ route('deliveries.index', ['date' => $date->toDateString(), 'order_status' => $status->value]) }}"
+            <a href="{{ route('deliveries.index', ['date' => $date->toDateString(), 'order_status' => 'new']) }}"
+               class="flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm font-medium transition
+                      {{ ($filters['order_status'] ?? '') === 'new' ? 'bg-amber-500 border-transparent text-white' : 'border-line text-amber-700 dark:border-strokedark dark:text-amber-400' }}">
+                <i class="fa-solid fa-clock text-xs"></i>
+                Pending ({{ $summary['outstanding'] }})
+            </a>
+            <a href="{{ route('deliveries.index', ['date' => $date->toDateString(), 'order_status' => 'delivered']) }}"
+               class="flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm font-medium transition
+                      {{ ($filters['order_status'] ?? '') === 'delivered' ? 'bg-emerald-600 border-transparent text-white' : 'border-line text-emerald-600 dark:border-strokedark dark:text-emerald-400' }}">
+                <i class="fa-solid fa-house-circle-check text-xs"></i>
+                Delivered ({{ $summary['delivered'] }})
+            </a>
+            @if (($summary['by_status']['cancelled'] ?? 0) + ($summary['by_status']['returned'] ?? 0) > 0)
+                <a href="{{ route('deliveries.index', ['date' => $date->toDateString(), 'order_status' => 'cancelled']) }}"
                    class="flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm font-medium transition
-                          {{ ($filters['order_status'] ?? '') === $status->value ? 'border-transparent text-white' : 'border-line dark:border-strokedark' }}"
-                   style="{{ ($filters['order_status'] ?? '') === $status->value
-                       ? 'background-color: ' . $status->color() . ';'
-                       : 'color: ' . $status->color() . ';' }}">
-                    <i class="fa-solid {{ $status->icon() }} text-xs"></i>
-                    {{ $status->label() }} ({{ $summary['by_status'][$status->value] }})
+                          {{ ($filters['order_status'] ?? '') === 'cancelled' ? 'bg-red-600 border-transparent text-white' : 'border-line text-red-600 dark:border-strokedark dark:text-red-400' }}">
+                    <i class="fa-solid fa-ban text-xs"></i>
+                    Cancelled ({{ ($summary['by_status']['cancelled'] ?? 0) + ($summary['by_status']['returned'] ?? 0) }})
                 </a>
-            @endforeach
+            @endif
         </div>
     </x-card>
 
@@ -106,7 +113,6 @@
                             <th class="ta-th">Items</th>
                             <th class="ta-th">Sales Person</th>
                             <th class="ta-th">Status</th>
-                            <th class="ta-th">Payment</th>
                             <th class="ta-th text-right">Total</th>
                             <th class="ta-th text-right">Actions</th>
                         </tr>
@@ -127,7 +133,6 @@
                                 </td>
                                 <td class="ta-td">{{ $order->salesPerson?->name ?? '--' }}</td>
                                 <td class="ta-td"><x-status-pill :status="$order->order_status" /></td>
-                                <td class="ta-td"><x-status-pill :status="$order->payment_status" /></td>
                                 <td class="ta-td text-right font-semibold"><x-money :amount="$order->grand_total" /></td>
                                 <td class="ta-td">
                                     <div class="flex items-center justify-end gap-2">
@@ -170,7 +175,6 @@
                         </div>
                         <div class="mt-3 flex flex-wrap items-center gap-2">
                             <x-status-pill :status="$order->order_status" />
-                            <x-status-pill :status="$order->payment_status" />
                             @can('recordDelivery', $order)
                                 @unless ($order->actual_delivery_date)
                                     <form method="POST" action="{{ route('orders.deliver', $order) }}" class="ml-auto">

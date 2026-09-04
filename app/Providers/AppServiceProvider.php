@@ -31,9 +31,14 @@ class AppServiceProvider extends ServiceProvider
 
         $this->defineGates();
 
-        // The header shows how many deliveries are scheduled for today. Cached
+        // The header shows how many deliveries are scheduled for tomorrow. Cached
         // briefly so it costs one indexed count per minute, not one per page.
         View::composer('layouts.partials.header', function ($view) {
+            $view->with('tomorrowDeliveryCount', Cache::remember(
+                'deliveries.tomorrow.count.' . today()->addDay()->toDateString(),
+                now()->addMinute(),
+                fn () => Order::query()->forDeliveryDate(today()->addDay())->open()->count(),
+            ));
             $view->with('todayDeliveryCount', Cache::remember(
                 'deliveries.today.count.' . today()->toDateString(),
                 now()->addMinute(),
@@ -84,7 +89,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('delete-orders', fn (User $u) => false);
         Gate::define('manage-customers', fn (User $u) => $management($u) && self::managerMay('manage_customers'));
         Gate::define('manage-products', fn (User $u) => $management($u) && self::managerMay('manage_products'));
-        Gate::define('export-data', fn (User $u) => $management($u) && self::managerMay('export_data', true));
+        Gate::define('export-data', fn (User $u) => false);
 
         // Admin-only capabilities. The Gate::before above lets Admins through;
         // everyone else is refused here.
