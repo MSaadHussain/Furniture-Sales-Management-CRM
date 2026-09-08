@@ -286,7 +286,7 @@
     <div x-data="{ open: false, typed: '', required: @js($order->order_number) }"
          x-on:open-delete.window="open = true; typed = ''"
          x-show="open" x-cloak
-         class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+         class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
         <div x-on:click.outside="open = false" class="w-full max-w-md rounded-2xl bg-white p-6 dark:bg-boxdark2">
             <div class="flex items-start gap-3">
                 <span class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-danger/10 text-danger">
