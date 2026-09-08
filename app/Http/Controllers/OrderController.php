@@ -44,7 +44,7 @@ class OrderController extends Controller implements HasMiddleware
 
         $orders = $this->sorted($this->filtered($request), $sort, $direction)
             ->with(['customer', 'salesPerson', 'items'])
-            ->paginate(20)
+            ->paginate(50)
             ->withQueryString();
 
         // Totals for the whole filtered set, not just the visible page.

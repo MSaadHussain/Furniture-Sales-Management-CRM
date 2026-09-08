@@ -198,40 +198,36 @@
                             <th class="ta-th py-3 px-3 text-right">Action</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-line dark:divide-strokedark text-xs">
+                    <tbody class="divide-y divide-line dark:divide-strokedark text-sm">
                         @foreach ($orders as $order)
                             <tr class="transition hover:bg-surface/60 dark:hover:bg-boxdark/50">
                                 {{-- Order Number & Date --}}
                                 <td class="py-2.5 px-3 whitespace-nowrap">
-                                    <a href="{{ route('orders.show', $order) }}" class="font-bold text-sm text-brand hover:underline" title="{{ $order->order_number }}">
+                                    <a href="{{ route('orders.show', $order) }}" class="font-bold text-base text-brand hover:underline" title="{{ $order->order_number }}">
                                         {{ $order->display_number }}
                                     </a>
-                                    <p class="text-[10px] text-muted">{{ $order->order_created_at?->format('d M Y') }}</p>
+                                    <p class="text-xs text-muted dark:text-gray-400">{{ $order->order_created_at?->format('d M Y') }}</p>
                                 </td>
 
-                                {{-- Customer Name & Contact --}}
+                                {{-- Customer name only. Phone and ZIP live on the
+                                     order detail page to keep this list scannable. --}}
                                 <td class="py-2.5 px-3">
-                                    <p class="font-bold text-ink dark:text-white truncate max-w-[150px]" title="{{ $order->customer?->name }}">
+                                    <p class="font-bold text-ink dark:text-white truncate max-w-[180px]" title="{{ $order->customer?->name }}">
                                         {{ $order->customer?->name ?? 'Unknown' }}
-                                    </p>
-                                    <p class="text-[10px] text-muted truncate max-w-[150px]">
-                                        {{ $order->customer?->phone }}
-                                        @if ($order->zip_code) &middot; <span class="font-medium text-ink dark:text-gray-300">{{ $order->zip_code }}</span> @endif
                                     </p>
                                 </td>
 
                                 {{-- Items Summary --}}
-                                <td class="py-2.5 px-3 max-w-[170px]">
-                                    <p class="truncate font-medium text-ink dark:text-gray-200" title="{{ $order->itemSummary(5) }}">
+                                <td class="py-2.5 px-3 max-w-[200px]">
+                                    <p class="truncate font-medium text-ink dark:text-white" title="{{ $order->itemSummary(5) }}">
                                         {{ $order->itemSummary(2) }}
                                     </p>
-                                    <span class="text-[10px] text-muted">{{ $order->totalQuantity() }} item(s)</span>
                                 </td>
 
                                 {{-- Sales Person --}}
                                 <td class="py-2.5 px-3 whitespace-nowrap">
-                                    <span class="inline-flex items-center gap-1.5 font-medium text-ink dark:text-gray-300">
-                                        <i class="fa-solid fa-user-tie text-[10px] text-muted"></i>
+                                    <span class="inline-flex items-center gap-1.5 font-medium text-ink dark:text-white">
+                                        <i class="fa-solid fa-user-tie text-[10px] text-muted dark:text-gray-400"></i>
                                         <span>{{ $order->salesPerson?->name ?? '--' }}</span>
                                     </span>
                                 </td>
@@ -239,7 +235,7 @@
                                  {{-- Delivery Schedule & Inline Record Delivery --}}
                                 <td class="py-2.5 px-3">
                                     <div class="whitespace-nowrap">
-                                        <p class="font-medium text-ink dark:text-gray-200">{{ $order->requested_delivery_date?->format('d M Y') }}</p>
+                                        <p class="font-medium text-ink dark:text-white">{{ $order->requested_delivery_date?->format('d M Y') }}</p>
                                         
                                         @if ($order->order_status === \App\Enums\OrderStatus::Delivered && $order->actual_delivery_date)
                                             <span class="inline-flex items-center gap-1 rounded bg-emerald-500/10 px-1.5 py-0.2 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
@@ -278,7 +274,7 @@
                                             @method('PATCH')
                                             <select name="order_status"
                                                     x-on:change="window.showLoading('Updating Order Status...', 'Saving status and updating records...'); $refs['statusForm{{ $order->id }}'].submit()"
-                                                    class="rounded-lg text-[11px] font-bold px-2.5 py-1 border shadow-xs transition cursor-pointer focus:ring-1 focus:outline-none {{ $order->order_status === \App\Enums\OrderStatus::Delivered ? '!bg-emerald-600 !text-white !border-emerald-600' : ($order->order_status === \App\Enums\OrderStatus::Cancelled ? '!bg-red-600 !text-white !border-red-600' : '!bg-amber-100 !text-amber-800 !border-amber-300 dark:!bg-amber-900/50 dark:!text-amber-200') }}">
+                                                    class="rounded-lg text-xs font-bold px-2.5 py-1 border shadow-xs transition cursor-pointer focus:ring-1 focus:outline-none {{ $order->order_status === \App\Enums\OrderStatus::Delivered ? '!bg-emerald-600 !text-white !border-emerald-600' : ($order->order_status === \App\Enums\OrderStatus::Cancelled ? '!bg-red-600 !text-white !border-red-600' : '!bg-amber-100 !text-amber-800 !border-amber-300 dark:!bg-amber-900/50 dark:!text-amber-200') }}">
                                                 <option value="new" @selected(!in_array($order->order_status, [\App\Enums\OrderStatus::Delivered, \App\Enums\OrderStatus::Cancelled])) class="bg-white text-ink dark:bg-boxdark dark:text-white font-semibold">Pending</option>
                                                 <option value="delivered" @selected($order->order_status === \App\Enums\OrderStatus::Delivered) class="bg-white text-ink dark:bg-boxdark dark:text-white font-semibold">Delivered</option>
                                                 <option value="cancelled" @selected($order->order_status === \App\Enums\OrderStatus::Cancelled) class="bg-white text-ink dark:bg-boxdark dark:text-white font-semibold">Cancelled</option>
@@ -290,7 +286,7 @@
                                 </td>
 
                                 {{-- Total Revenue in € --}}
-                                <td class="py-2.5 px-3 text-right font-black text-xs text-ink dark:text-white whitespace-nowrap">
+                                <td class="py-2.5 px-3 text-right font-black text-sm text-ink dark:text-white whitespace-nowrap">
                                     <x-money :amount="$order->grand_total" />
                                 </td>
 
@@ -300,13 +296,13 @@
                                         <button type="button"
                                                 data-copy-btn="true"
                                                 x-on:click="window.copyOrderToClipboard(text); copied = true; setTimeout(() => copied = false, 2000)"
-                                                class="inline-flex h-7 w-7 items-center justify-center rounded-lg text-muted transition hover:bg-brand/10 hover:text-brand"
+                                                class="inline-flex h-7 w-7 items-center justify-center rounded-lg text-muted dark:text-gray-300 transition hover:bg-brand/10 hover:text-brand"
                                                 :class="{ '!bg-emerald-500/10 !text-emerald-600': copied }"
                                                 :title="copied ? 'Copied to clipboard!' : 'Copy order details'">
                                             <i class="fa-solid text-xs" :class="copied ? 'fa-check' : 'fa-copy'"></i>
                                         </button>
                                         <a href="{{ route('orders.show', $order) }}"
-                                           class="inline-flex h-7 w-7 items-center justify-center rounded-lg text-muted transition hover:bg-brand/10 hover:text-brand"
+                                           class="inline-flex h-7 w-7 items-center justify-center rounded-lg text-muted dark:text-gray-300 transition hover:bg-brand/10 hover:text-brand"
                                            title="View Order Details">
                                             <i class="fa-solid fa-arrow-right text-xs"></i>
                                         </a>
@@ -352,12 +348,12 @@
                                 <a href="{{ route('orders.show', $order) }}" class="font-bold text-base text-brand hover:underline" title="{{ $order->order_number }}">
                                     {{ $order->display_number }}
                                 </a>
-                                <p class="truncate text-sm font-medium text-ink dark:text-gray-200">{{ $order->customer?->name }}</p>
-                                <p class="truncate text-xs text-muted">{{ $order->itemSummary(2) }}</p>
+                                <p class="truncate text-base font-medium text-ink dark:text-white">{{ $order->customer?->name }}</p>
+                                <p class="truncate text-sm text-muted dark:text-gray-300">{{ $order->itemSummary(2) }}</p>
                             </div>
                             <span class="text-right">
                                 <span class="block font-bold text-ink dark:text-white"><x-money :amount="$order->grand_total" /></span>
-                                <span class="mt-1 block text-xs text-muted">{{ $order->requested_delivery_date?->format('d M Y') }}</span>
+                                <span class="mt-1 block text-sm text-muted dark:text-gray-300">{{ $order->requested_delivery_date?->format('d M Y') }}</span>
                             </span>
                         </div>
                         <div class="mt-3 flex flex-wrap items-center justify-between gap-2">

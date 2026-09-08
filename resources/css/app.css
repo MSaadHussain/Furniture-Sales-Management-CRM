@@ -115,3 +115,28 @@
     color: #64748B;
 }
 
+
+/* ---------------------------------------------------------------------------
+ | Dark mode legibility
+ |---------------------------------------------------------------------------
+ | `text-muted` is #667085, which is a readable grey on the light theme but
+ | sits too close to the dark surfaces (#1C2434 / #24303F) to be comfortable.
+ | Lifting it once here brightens every secondary label, table header, hint and
+ | timestamp across the app, instead of patching them view by view.
+ |
+ | `.dark .text-muted` is two classes, so it outranks the Tailwind utility
+ | regardless of source order.
+ */
+.dark .text-muted {
+    color: #AEB9C9;
+}
+
+/* Table body copy goes white in dark mode; headers stay a step down so the
+   header row still reads as a header. */
+.dark .ta-td {
+    color: #FFFFFF;
+}
+
+.dark .ta-th {
+    color: #C3CCDA;
+}
