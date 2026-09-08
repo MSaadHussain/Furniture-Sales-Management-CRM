@@ -14,7 +14,7 @@ class Customer extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'name', 'phone', 'email', 'address', 'city', 'state', 'zip_code', 'notes', 'created_by',
+        'name', 'phone', 'phone_alt', 'email', 'address', 'city', 'state', 'zip_code', 'notes', 'created_by',
     ];
 
     public function orders(): HasMany
@@ -38,7 +38,8 @@ class Customer extends Model
             $q->where('name', 'like', "%{$term}%")
               ->orWhere('email', 'like', "%{$term}%")
               ->orWhere('zip_code', 'like', "%{$term}%")
-              ->orWhere('phone', 'like', '%' . self::normalisePhone($term) . '%');
+              ->orWhere('phone', 'like', '%' . self::normalisePhone($term) . '%')
+              ->orWhere('phone_alt', 'like', '%' . self::normalisePhone($term) . '%');
 
             if (ctype_digit($term)) {
                 $q->orWhere('id', (int) $term);
@@ -71,6 +72,8 @@ class Customer extends Model
         $direct = static::query()
             ->where('phone', $raw)
             ->orWhere('phone', $digits)
+            ->orWhere('phone_alt', $raw)
+            ->orWhere('phone_alt', $digits)
             ->first();
 
         if ($direct) {
@@ -81,6 +84,7 @@ class Customer extends Model
         $tail = strlen($digits) >= 8 ? substr($digits, -8) : (strlen($digits) >= 7 ? substr($digits, -7) : $digits);
         $candidate = static::query()
             ->where('phone', 'like', "%{$tail}")
+            ->orWhere('phone_alt', 'like', "%{$tail}")
             ->first();
 
         if ($candidate) {
@@ -88,11 +92,16 @@ class Customer extends Model
         }
 
         // 3. Fallback only if needed (for oddly formatted phone strings in DB)
-        $cleanSql = "REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(phone, ' ', ''), '-', ''), '(', ''), ')', ''), '+', ''), '.', ''), '/', '')";
+        $clean = fn (string $column) => "REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE({$column}, ' ', ''), '-', ''), '(', ''), ')', ''), '+', ''), '.', ''), '/', '')";
+
+        $cleanSql    = $clean('phone');
+        $cleanAltSql = $clean('phone_alt');
 
         return static::query()
             ->whereRaw("{$cleanSql} = ?", [$digits])
             ->orWhereRaw("{$cleanSql} LIKE ?", ["%{$tail}"])
+            ->orWhereRaw("{$cleanAltSql} = ?", [$digits])
+            ->orWhereRaw("{$cleanAltSql} LIKE ?", ["%{$tail}"])
             ->first();
     }
 

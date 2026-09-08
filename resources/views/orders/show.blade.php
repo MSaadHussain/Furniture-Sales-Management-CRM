@@ -24,6 +24,13 @@
             <i class="fa-solid fa-ban"></i> Cancel order
         </button>
     @endcan
+    @can('delete', $order)
+        {{-- Admin only, and irreversible. Deliberately not offered on the order
+             list: you have to open an order to be able to destroy it. --}}
+        <button type="button" class="btn btn-danger" x-data @click="$dispatch('open-delete')">
+            <i class="fa-solid fa-trash"></i> Delete
+        </button>
+    @endcan
 @endsection
 
 @section('content')
@@ -269,6 +276,59 @@
                     <button type="button" class="btn btn-light" x-on:click="open = false">Keep order</button>
                 </div>
             </form>
+        </div>
+    </div>
+@endcan
+
+{{-- Permanent delete. There is no undo, so the order number must be typed
+     before the button unlocks: a stray click cannot destroy a sale. --}}
+@can('delete', $order)
+    <div x-data="{ open: false, typed: '', required: @js($order->order_number) }"
+         x-on:open-delete.window="open = true; typed = ''"
+         x-show="open" x-cloak
+         class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+        <div x-on:click.outside="open = false" class="w-full max-w-md rounded-2xl bg-white p-6 dark:bg-boxdark2">
+            <div class="flex items-start gap-3">
+                <span class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-danger/10 text-danger">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                </span>
+                <div>
+                    <h3 class="text-lg font-semibold text-ink dark:text-white">Delete {{ $order->display_number }} permanently?</h3>
+                    <p class="mt-1 text-sm text-muted">
+                        This erases the order and all {{ $order->items->count() }} of its line items.
+                        It cannot be undone and the order will not appear in any report again.
+                    </p>
+                </div>
+            </div>
+
+            <div class="mt-4 rounded-xl border border-line bg-surface px-3 py-2.5 text-sm dark:border-strokedark dark:bg-boxdark">
+                <div class="flex justify-between"><span class="text-muted">Customer</span><span class="font-medium text-ink dark:text-gray-200">{{ $order->customer?->name ?? 'Unknown' }}</span></div>
+                <div class="mt-1 flex justify-between"><span class="text-muted">Value</span><span class="font-medium text-ink dark:text-gray-200"><x-money :amount="$order->grand_total" /></span></div>
+            </div>
+
+            <form method="POST" action="{{ route('orders.destroy', $order) }}" class="mt-4 space-y-3">
+                @csrf @method('DELETE')
+                <div>
+                    <label class="ta-label">
+                        Type <span class="font-mono font-bold text-ink dark:text-white">{{ $order->order_number }}</span> to confirm
+                    </label>
+                    <input type="text" x-model="typed" autocomplete="off"
+                           placeholder="{{ $order->order_number }}"
+                           class="ta-input font-mono">
+                </div>
+                <div class="flex gap-2">
+                    <button type="submit" class="btn btn-danger flex-1"
+                            x-bind:disabled="typed.trim() !== required"
+                            x-bind:class="typed.trim() !== required ? 'opacity-50 cursor-not-allowed' : ''">
+                        <i class="fa-solid fa-trash"></i> Delete permanently
+                    </button>
+                    <button type="button" class="btn btn-light" x-on:click="open = false">Keep order</button>
+                </div>
+            </form>
+
+            <p class="mt-3 text-xs text-muted">
+                A record of the deletion, including who did it, stays in the audit log.
+            </p>
         </div>
     </div>
 @endcan

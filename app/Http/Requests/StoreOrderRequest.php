@@ -39,6 +39,7 @@ class StoreOrderRequest extends FormRequest
             'customer_id'       => ['nullable', 'integer', Rule::exists('customers', 'id')->whereNull('deleted_at')],
             'customer_name'     => ['required', 'string', 'max:255'],
             'customer_phone'    => ['required', 'string', 'max:40'],
+            'customer_phone_alt' => ['nullable', 'string', 'max:40'],
             'customer_email'    => ['nullable', 'email', 'max:255'],
             'customer_address'  => ['nullable', 'string', 'max:255'],
             'customer_city'     => ['nullable', 'string', 'max:120'],

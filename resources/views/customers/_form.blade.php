@@ -25,6 +25,18 @@
                     </div>
 
                     <div>
+                        <label class="ta-label">Additional Phone <span class="text-muted">(optional)</span></label>
+                        <input type="text" name="phone_alt" maxlength="40"
+                               value="{{ old('phone_alt', $customer->phone_alt) }}"
+                               class="ta-input @error('phone_alt') !border-danger @enderror">
+                        @error('phone_alt')
+                            <p class="mt-1 text-xs text-danger">{{ $message }}</p>
+                        @else
+                            <p class="mt-1 text-xs text-muted">Searched and matched for duplicates just like the main number.</p>
+                        @enderror
+                    </div>
+
+                    <div>
                         <label class="ta-label">Email <span class="text-muted">(optional)</span></label>
                         <input type="email" name="email" maxlength="255"
                                value="{{ old('email', $customer->email) }}"

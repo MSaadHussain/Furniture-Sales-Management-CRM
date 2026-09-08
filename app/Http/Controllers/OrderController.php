@@ -13,6 +13,7 @@ use App\Models\Customer;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\User;
+use App\Services\AuditService;
 use App\Services\Export\TabularExport;
 use App\Services\OrderService;
 use App\Support\Money;
@@ -22,7 +23,10 @@ use Illuminate\Support\Carbon;
 
 class OrderController extends Controller implements HasMiddleware
 {
-    public function __construct(private OrderService $orders) {}
+    public function __construct(
+        private OrderService $orders,
+        private AuditService $audit,
+    ) {}
 
     /** Sales Persons never reach any order screen (requirements 3.3). */
     public static function middleware(): array
@@ -124,14 +128,54 @@ class OrderController extends Controller implements HasMiddleware
             ->with('toast', "Order {$order->order_number} updated.");
     }
 
+    /**
+     * Permanently removes an order and its line items. Admin only, and there is
+     * no undo: the row is gone, not soft-deleted.
+     *
+     * A snapshot goes into the audit log first, so the trail still records who
+     * removed what even though the order itself no longer exists (28). The
+     * order number is not recycled, thanks to the high-water mark in
+     * OrderNumberService.
+     */
     public function destroy(Order $order)
     {
         $this->authorize('delete', $order);
 
-        $number = $order->order_number;
-        $order->delete();
+        $order->loadMissing(['customer', 'salesPerson', 'items']);
 
-        return redirect()->route('orders.index')->with('toast', "Order {$number} deleted.");
+        $snapshot = [
+            'order_number'            => $order->order_number,
+            'customer'                => $order->customer?->name,
+            'customer_phone'          => $order->customer?->phone,
+            'zip_code'                => $order->zip_code,
+            'sales_person'            => $order->salesPerson?->name,
+            'order_created_at'        => $order->order_created_at?->toDateTimeString(),
+            'requested_delivery_date' => $order->requested_delivery_date?->toDateString(),
+            'actual_delivery_date'    => $order->actual_delivery_date?->toDateString(),
+            'order_status'            => $order->order_status?->value,
+            'payment_status'          => $order->payment_status?->value,
+            'grand_total'             => (string) $order->grand_total,
+            'items'                   => $order->items
+                ->map(fn ($i) => "{$i->quantity} x {$i->item_name_snapshot}" . ($i->item_colour ? " ({$i->item_colour})" : ''))
+                ->implode(', '),
+        ];
+
+        $number = $order->order_number;
+
+        $this->audit->log(
+            'order.force_deleted',
+            null,
+            "Permanently deleted order {$number}",
+            $snapshot,
+            null,
+        );
+
+        // Line items go with it: order_items.order_id cascades on delete.
+        $order->forceDelete();
+
+        return redirect()
+            ->route('orders.index')
+            ->with('toast', "Order {$number} was permanently deleted.");
     }
 
     /* ---------------------------------------------------------------------
@@ -263,6 +307,7 @@ class OrderController extends Controller implements HasMiddleware
                 'id'       => $customer->id,
                 'name'     => $customer->name,
                 'phone'    => $customer->phone,
+                'phone_alt' => $customer->phone_alt,
                 'email'    => $customer->email,
                 'address'  => $customer->address,
                 'city'     => $customer->city,

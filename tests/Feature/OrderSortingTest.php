@@ -158,4 +158,49 @@ class OrderSortingTest extends TestCase
         $this->assertStringContainsString('sort=total&amp;direction=desc', $html);
         $this->assertStringContainsString('sort=customer&amp;direction=asc', $html);
     }
+    public function test_orders_can_be_sorted_by_creation_date_in_both_directions(): void
+    {
+        $this->order('Oldest', 1000, now()->subDays(10)->toDateTimeString());
+        $this->order('Middle', 2000, now()->subDays(5)->toDateTimeString());
+        $this->order('Newest', 3000, now()->toDateTimeString());
+
+        $asc = $this->actingAs($this->admin)
+            ->get(route('orders.index', ['sort' => 'created', 'direction' => 'asc']))
+            ->assertOk()->getContent();
+        $this->assertSame(
+            ['Oldest', 'Middle', 'Newest'],
+            $this->renderedOrder($asc, ['Oldest', 'Middle', 'Newest']),
+        );
+
+        $desc = $this->actingAs($this->admin)
+            ->get(route('orders.index', ['sort' => 'created', 'direction' => 'desc']))
+            ->assertOk()->getContent();
+        $this->assertSame(
+            ['Newest', 'Middle', 'Oldest'],
+            $this->renderedOrder($desc, ['Oldest', 'Middle', 'Newest']),
+        );
+    }
+
+    public function test_the_order_column_header_offers_a_date_created_sort(): void
+    {
+        $this->order('Alpha', 1000, now()->toDateTimeString());
+
+        $html = $this->actingAs($this->admin)->get(route('orders.index'))->assertOk()->getContent();
+
+        $this->assertStringContainsString('Date created', $html);
+        // Default view is newest-first, so the link offers the flip to oldest-first.
+        $this->assertStringContainsString('sort=created&amp;direction=asc', $html);
+    }
+
+    public function test_the_mobile_card_list_exposes_a_sort_control(): void
+    {
+        $this->order('Alpha', 1000, now()->toDateTimeString());
+
+        $html = $this->actingAs($this->admin)->get(route('orders.index'))->assertOk()->getContent();
+
+        $this->assertStringContainsString('id="mobileSort"', $html);
+        $this->assertStringContainsString('Newest first', $html);
+        $this->assertStringContainsString('Oldest first', $html);
+    }
+
 }

@@ -43,11 +43,11 @@
 
     /* ---- Form controls ---- */
     .ta-input {
-        @apply w-full rounded-lg border border-line bg-white px-4 py-2.5 text-sm text-ink
+        @apply w-full rounded-lg border border-line bg-white px-4 py-2.5 text-base text-ink
                placeholder:text-muted focus:border-brand focus:ring-brand/30
                dark:border-strokedark dark:bg-boxdark dark:text-gray-200;
     }
-    .ta-label { @apply mb-1.5 block text-sm font-medium text-ink dark:text-gray-300; }
+    .ta-label { @apply mb-1.5 block text-[15px] font-medium text-ink dark:text-gray-300; }
 
     /* ---- Badges ---- */
     .ta-badge { @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold; }

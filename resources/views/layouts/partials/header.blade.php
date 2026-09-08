@@ -10,18 +10,8 @@
                 <i class="fa-solid fa-bars"></i>
             </button>
 
-            {{-- Global search hits the order list, which already searches order
-                 number, customer name, phone, ZIP and item name. --}}
-            @can('view-orders')
-                <form method="GET" action="{{ route('orders.index') }}" class="hidden max-w-md flex-1 sm:block">
-                    <div class="relative">
-                        <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-muted"></i>
-                        <input type="search" name="search" value="{{ request('search') }}"
-                               placeholder="Search order number, customer, phone, ZIP..."
-                               class="ta-input pl-11" />
-                    </div>
-                </form>
-            @endcan
+            {{-- The global search lived here. Removed: the Orders and Customers
+                 pages each carry their own search box over the same fields. --}}
         </div>
 
         <div class="flex items-center gap-2 sm:gap-3">

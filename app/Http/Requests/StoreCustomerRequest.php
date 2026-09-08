@@ -24,6 +24,7 @@ class StoreCustomerRequest extends FormRequest
         return [
             'name'     => ['required', 'string', 'max:255'],
             'phone'    => ['required', 'string', 'max:40'],
+            'phone_alt' => ['nullable', 'string', 'max:40'],
             'email'    => ['nullable', 'email', 'max:255', Rule::unique('customers', 'email')->ignore($id)->whereNull('deleted_at')],
             'address'  => ['nullable', 'string', 'max:255'],
             'city'     => ['nullable', 'string', 'max:120'],

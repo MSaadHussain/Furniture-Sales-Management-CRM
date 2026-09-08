@@ -186,7 +186,9 @@
                     <thead class="border-b border-line dark:border-strokedark bg-surface/40 dark:bg-boxdark2">
                         <tr>
                             {{-- Click any header to sort; clicking the active one flips direction. --}}
-                            <x-sort-header column="order_number" label="Order" class="py-3 px-3" />
+                            {{-- Two sort keys, matching the two lines in the cell below. --}}
+                            <x-sort-header column="order_number" label="Order" class="py-3 px-3"
+                                           sub="created" sub-label="Date created" />
                             <x-sort-header column="customer" label="Customer" class="py-3 px-3" default="asc" />
                             <th class="ta-th py-3 px-3">Items</th>
                             <x-sort-header column="sales_person" label="Sales Person" class="py-3 px-3" default="asc" />
@@ -314,6 +316,31 @@
                         @endforeach
                     </tbody>
                 </table>
+            </div>
+
+            {{-- Mobile sort control: the card list has no headers to click, so
+                 sorting would otherwise be unreachable on a phone. --}}
+            <div class="flex items-center gap-2 border-b border-line px-4 py-2.5 lg:hidden dark:border-strokedark">
+                <label for="mobileSort" class="text-xs font-semibold text-muted">Sort by</label>
+                <select id="mobileSort" class="ta-input !py-1.5 !text-xs flex-1"
+                        onchange="window.location = this.value">
+                    @foreach ([
+                        'created|desc'      => 'Newest first',
+                        'created|asc'       => 'Oldest first',
+                        'requested|asc'     => 'Delivery date (soonest)',
+                        'requested|desc'    => 'Delivery date (latest)',
+                        'total|desc'        => 'Highest value',
+                        'total|asc'         => 'Lowest value',
+                        'customer|asc'      => 'Customer A to Z',
+                        'order_status|asc'  => 'Order status',
+                    ] as $key => $optionLabel)
+                        @php([$sortKey, $sortDir] = explode('|', $key))
+                        <option value="{{ request()->fullUrlWithQuery(['sort' => $sortKey, 'direction' => $sortDir, 'page' => null]) }}"
+                            @selected(request('sort', 'created') === $sortKey && strtolower(request('direction', 'desc')) === $sortDir)>
+                            {{ $optionLabel }}
+                        </option>
+                    @endforeach
+                </select>
             </div>
 
             {{-- Mobile cards --}}

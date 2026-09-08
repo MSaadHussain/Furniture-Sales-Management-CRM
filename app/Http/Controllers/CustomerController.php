@@ -140,12 +140,12 @@ class CustomerController extends Controller implements HasMiddleware
             ->withMax('orders as last_order_at', 'order_created_at')
             ->orderBy('name');
 
-        $headers = ['Customer ID', 'Name', 'Phone', 'Email', 'Address', 'City', 'State', 'ZIP', 'Orders', 'Total Spent', 'Last Order', 'Created'];
+        $headers = ['Customer ID', 'Name', 'Phone', 'Additional Phone', 'Email', 'Address', 'City', 'State', 'ZIP', 'Orders', 'Total Spent', 'Last Order', 'Created'];
 
         $rows = function () use ($query) {
             foreach ($query->cursor() as $c) {
                 yield [
-                    $c->id, $c->name, $c->phone, $c->email, $c->address, $c->city, $c->state, $c->zip_code,
+                    $c->id, $c->name, $c->phone, $c->phone_alt, $c->email, $c->address, $c->city, $c->state, $c->zip_code,
                     $c->orders_count, $c->orders_value ?? 0,
                     $c->last_order_at ? \Illuminate\Support\Carbon::parse($c->last_order_at)->format('Y-m-d') : null,
                     $c->created_at?->format('Y-m-d'),

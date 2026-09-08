@@ -122,7 +122,13 @@
             <x-card title="Contact">
                 <dl class="space-y-3 text-sm">
                     <div><dt class="text-xs uppercase tracking-wide text-muted">Customer ID</dt><dd class="mt-0.5 font-medium text-ink dark:text-gray-200">#{{ $customer->id }}</dd></div>
-                    <div><dt class="text-xs uppercase tracking-wide text-muted">Phone</dt><dd class="mt-0.5 text-ink dark:text-gray-200">{{ $customer->phone }}</dd></div>
+                    <div>
+                        <dt class="text-xs uppercase tracking-wide text-muted">Phone</dt>
+                        <dd class="mt-0.5 text-ink dark:text-gray-200">{{ $customer->phone }}</dd>
+                        @if ($customer->phone_alt)
+                            <dd class="mt-0.5 text-ink dark:text-gray-200">{{ $customer->phone_alt }} <span class="text-xs text-muted">(alt)</span></dd>
+                        @endif
+                    </div>
                     <div><dt class="text-xs uppercase tracking-wide text-muted">Email</dt><dd class="mt-0.5 break-all text-ink dark:text-gray-200">{{ $customer->email ?: '--' }}</dd></div>
                     <div><dt class="text-xs uppercase tracking-wide text-muted">Address</dt><dd class="mt-0.5 text-ink dark:text-gray-200">{{ $customer->address ?: '--' }}</dd></div>
                     <div><dt class="text-xs uppercase tracking-wide text-muted">City / State</dt><dd class="mt-0.5 text-ink dark:text-gray-200">{{ collect([$customer->city, $customer->state])->filter()->implode(', ') ?: '--' }}</dd></div>

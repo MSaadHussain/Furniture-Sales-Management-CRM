@@ -76,7 +76,7 @@
     {{-- Single Unified Order Form Container --}}
     <div class="rounded-2xl border border-line bg-white p-4 sm:p-6 shadow-xs dark:border-strokedark dark:bg-boxdark space-y-6"
          x-data="{ 
-             showMoreCustomer: {{ ($customer?->email || $customer?->state || old('customer_email') || old('customer_state')) ? 'true' : 'false' }},
+             showMoreCustomer: {{ ($customer?->email || $customer?->state || $customer?->phone_alt || old('customer_email') || old('customer_state') || old('customer_phone_alt')) ? 'true' : 'false' }},
              {{-- Order status and delivery notes are shown expanded by default. --}}
              showMoreOptions: true
          }">
@@ -100,7 +100,7 @@
                 <button type="button"
                         x-on:click="showMoreCustomer = !showMoreCustomer"
                         class="text-xs font-semibold text-brand hover:underline transition">
-                    <span x-text="showMoreCustomer ? '− Hide Email & State' : '+ Add Email / State'"></span>
+                    <span x-text="showMoreCustomer ? '− Hide Extra Details' : '+ Add Phone / Email / State'"></span>
                 </button>
             </div>
 
@@ -145,7 +145,7 @@
             {{-- Row 1: Phone & Name --}}
             <div class="grid grid-cols-1 gap-3.5 sm:grid-cols-12">
                 <div class="sm:col-span-5">
-                    <label class="text-xs font-semibold text-muted block mb-1">Phone Number <span class="text-danger">*</span></label>
+                    <label class="text-sm font-semibold text-muted block mb-1">Phone Number <span class="text-danger">*</span></label>
                     <div class="relative">
                         <input type="text" name="customer_phone" required maxlength="40"
                                value="{{ old('customer_phone', $customer?->phone) }}"
@@ -153,18 +153,18 @@
                                placeholder="Phone number"
                                x-on:input.debounce.350ms="checkDuplicate($event.target.value)"
                                x-on:change="checkDuplicate($event.target.value)"
-                               class="ta-input !py-2 !text-sm font-semibold @error('customer_phone') !border-danger @enderror">
+                               class="ta-input !py-2 font-semibold @error('customer_phone') !border-danger @enderror">
                     </div>
                     @error('customer_phone')<p class="mt-1 text-xs text-danger">{{ $message }}</p>@enderror
                 </div>
 
                 <div class="sm:col-span-7">
-                    <label class="text-xs font-semibold text-muted block mb-1">Customer Name <span class="text-danger">*</span></label>
+                    <label class="text-sm font-semibold text-muted block mb-1">Customer Name <span class="text-danger">*</span></label>
                     <input type="text" name="customer_name" required maxlength="255"
                            value="{{ old('customer_name', $customer?->name) }}"
                            x-ref="customerName"
                            placeholder="Customer full name"
-                           class="ta-input !py-2 !text-sm font-medium @error('customer_name') !border-danger @enderror">
+                           class="ta-input !py-2 font-medium @error('customer_name') !border-danger @enderror">
                     @error('customer_name')<p class="mt-1 text-xs text-danger">{{ $message }}</p>@enderror
                 </div>
             </div>
@@ -174,44 +174,56 @@
                  delivery location and the postal code drives the ZIP reports. --}}
             <div class="grid grid-cols-1 gap-3.5 sm:grid-cols-12">
                 <div class="sm:col-span-8">
-                    <label class="text-xs font-semibold text-muted block mb-1">Delivery Address</label>
+                    <label class="text-sm font-semibold text-muted block mb-1">Delivery Address</label>
                     <input type="text" name="customer_address" maxlength="255"
                            value="{{ old('customer_address', $customer?->address) }}"
                            x-ref="customerAddress"
                            placeholder="Street address, building, apartment..."
-                           class="ta-input !py-2 !text-sm">
+                           class="ta-input !py-2">
                 </div>
 
                 <div class="sm:col-span-4">
-                    <label class="text-xs font-semibold text-muted block mb-1">Postal / ZIP Code <span class="text-danger">*</span></label>
+                    <label class="text-sm font-semibold text-muted block mb-1">Postal / ZIP Code <span class="text-danger">*</span></label>
                     <input type="text" name="customer_zip_code" required maxlength="20"
                            value="{{ old('customer_zip_code', $customer?->zip_code) }}"
                            x-ref="customerZip"
                            placeholder="Postal code"
-                           class="ta-input !py-2 !text-sm font-medium @error('customer_zip_code') !border-danger @enderror">
+                           class="ta-input !py-2 font-medium @error('customer_zip_code') !border-danger @enderror">
                     @error('customer_zip_code')<p class="mt-1 text-xs text-danger">{{ $message }}</p>@enderror
                 </div>
             </div>
 
-            {{-- Expandable Row: Email & State --}}
+            {{-- Expandable Row: Alternate phone, Email & State --}}
             <div x-show="showMoreCustomer" x-cloak
-                 class="pt-2 grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+                 class="pt-2 grid grid-cols-1 gap-3.5 sm:grid-cols-3">
                 <div>
-                    <label class="text-xs font-semibold text-muted block mb-1">Email Address</label>
+                    <label class="text-sm font-semibold text-muted block mb-1">
+                        Additional Phone <span class="font-normal text-muted">(optional)</span>
+                    </label>
+                    <input type="text" name="customer_phone_alt" maxlength="40"
+                           value="{{ old('customer_phone_alt', $customer?->phone_alt) }}"
+                           x-ref="customerPhoneAlt"
+                           placeholder="Second contact number"
+                           class="ta-input !py-2 @error('customer_phone_alt') !border-danger @enderror">
+                    @error('customer_phone_alt')<p class="mt-1 text-xs text-danger">{{ $message }}</p>@enderror
+                </div>
+
+                <div>
+                    <label class="text-sm font-semibold text-muted block mb-1">Email Address</label>
                     <input type="email" name="customer_email" maxlength="255"
                            value="{{ old('customer_email', $customer?->email) }}"
                            x-ref="customerEmail"
                            placeholder="email@example.com"
-                           class="ta-input !py-2 !text-sm">
+                           class="ta-input !py-2">
                 </div>
 
                 <div>
-                    <label class="text-xs font-semibold text-muted block mb-1">State / Province</label>
+                    <label class="text-sm font-semibold text-muted block mb-1">State / Province</label>
                     <input type="text" name="customer_state" maxlength="120"
                            value="{{ old('customer_state', $customer?->state) }}"
                            x-ref="customerState"
                            placeholder="State / Province"
-                           class="ta-input !py-2 !text-sm">
+                           class="ta-input !py-2">
                 </div>
             </div>
 
@@ -219,8 +231,8 @@
             <div class="grid grid-cols-1 gap-3.5 sm:grid-cols-12 pt-1">
                 {{-- Sales Person --}}
                 <div class="sm:col-span-4">
-                    <label class="text-xs font-semibold text-muted block mb-1">Sales Person <span class="text-danger">*</span></label>
-                    <select name="sales_person_id" required class="ta-input !py-2 !text-sm font-semibold @error('sales_person_id') !border-danger @enderror">
+                    <label class="text-sm font-semibold text-muted block mb-1">Sales Person <span class="text-danger">*</span></label>
+                    <select name="sales_person_id" required class="ta-input !py-2 font-semibold @error('sales_person_id') !border-danger @enderror">
                         <option value="">-- Select Sales Person --</option>
                         @foreach ($salesPersons as $person)
                             <option value="{{ $person->id }}"
@@ -234,11 +246,11 @@
 
                 {{-- Order Date --}}
                 <div class="sm:col-span-4">
-                    <label class="text-xs font-semibold text-muted block mb-1">Order Date <span class="text-danger">*</span></label>
+                    <label class="text-sm font-semibold text-muted block mb-1">Order Date <span class="text-danger">*</span></label>
                     <input type="text" name="order_created_at" required
                            x-datepicker
                            value="{{ old('order_created_at', optional($order->order_created_at)->format('Y-m-d') ?: today()->format('Y-m-d')) }}"
-                           class="ta-input !py-2 !text-sm font-medium @error('order_created_at') !border-danger @enderror">
+                           class="ta-input !py-2 font-medium @error('order_created_at') !border-danger @enderror">
                     @error('order_created_at')<p class="mt-1 text-xs text-danger">{{ $message }}</p>@enderror
                 </div>
 
@@ -257,7 +269,7 @@
                            x-ref="deliveryDate"
                            x-datepicker
                            value="{{ old('requested_delivery_date', optional($order->requested_delivery_date)->format('Y-m-d') ?: today()->addDay()->format('Y-m-d')) }}"
-                           class="ta-input !py-2 !text-sm font-medium @error('requested_delivery_date') !border-danger @enderror">
+                           class="ta-input !py-2 font-medium @error('requested_delivery_date') !border-danger @enderror">
                     @error('requested_delivery_date')<p class="mt-1 text-xs text-danger">{{ $message }}</p>@enderror
                 </div>
             </div>
@@ -272,8 +284,8 @@
 
                 <div x-show="showMoreOptions" x-cloak class="mt-3 grid grid-cols-1 gap-3.5 sm:grid-cols-12 p-3.5 rounded-xl bg-surface/50 border border-line/60 dark:border-strokedark dark:bg-boxdark2">
                     <div class="sm:col-span-4">
-                        <label class="text-xs font-semibold text-muted block mb-1">Order Status</label>
-                        <select name="order_status" class="ta-input !py-2 !text-sm font-semibold">
+                        <label class="text-sm font-semibold text-muted block mb-1">Order Status</label>
+                        <select name="order_status" class="ta-input !py-2 font-semibold">
                             <option value="new" @selected(!in_array(old('order_status', $order->order_status?->value ?? 'new'), ['delivered', 'cancelled', 'returned']))>Pending</option>
                             <option value="delivered" @selected(old('order_status', $order->order_status?->value ?? 'new') === 'delivered')>Delivered</option>
                             {{-- Cancelling is a permission of its own: Admins always have
@@ -286,17 +298,17 @@
 
                     @if ($isEdit)
                         <div class="sm:col-span-4">
-                            <label class="text-xs font-semibold text-muted block mb-1">Actual Delivery Date</label>
+                            <label class="text-sm font-semibold text-muted block mb-1">Actual Delivery Date</label>
                             <input type="text" name="actual_delivery_date"
                                    x-datepicker="{ maxDate: 'today' }"
                                    value="{{ old('actual_delivery_date', optional($order->actual_delivery_date)->format('Y-m-d')) }}"
-                                   class="ta-input !py-2 !text-sm @error('actual_delivery_date') !border-danger @enderror">
+                                   class="ta-input !py-2 @error('actual_delivery_date') !border-danger @enderror">
                         </div>
                     @endif
 
                     <div class="{{ $isEdit ? 'sm:col-span-4' : 'sm:col-span-8' }}">
-                        <label class="text-xs font-semibold text-muted block mb-1">Delivery Notes</label>
-                        <input type="text" name="notes" maxlength="2000" class="ta-input !py-2 !text-sm"
+                        <label class="text-sm font-semibold text-muted block mb-1">Delivery Notes</label>
+                        <input type="text" name="notes" maxlength="2000" class="ta-input !py-2"
                                placeholder="Gate code, instructions..."
                                value="{{ old('notes', $order->notes) }}">
                     </div>
@@ -364,7 +376,7 @@
                                 
                                 <div class="relative">
                                     <input type="text"
-                                           class="ta-input !py-2 !text-sm font-medium pr-7"
+                                           class="ta-input !py-2 font-medium pr-7"
                                            :name="`items[${index}][item_name]`"
                                            x-model="item.item_name"
                                            placeholder="Type or select product..."
@@ -423,7 +435,7 @@
 
                                 <div class="relative">
                                     <input type="text"
-                                           class="ta-input !py-2 !text-sm font-medium pl-8 pr-6"
+                                           class="ta-input !py-2 font-medium pl-8 pr-6"
                                            :name="`items[${index}][item_colour]`"
                                            x-model="item.item_colour"
                                            placeholder="Colour..."
@@ -476,7 +488,7 @@
                             {{-- Quantity --}}
                             <div class="col-span-3 sm:col-span-2">
                                 <label class="text-xs font-semibold text-muted block sm:hidden mb-1 text-center">Qty</label>
-                                <input type="number" min="1" step="1" class="ta-input !py-2 !text-sm font-bold text-center"
+                                <input type="number" min="1" step="1" class="ta-input !py-2 font-bold text-center"
                                        placeholder="1"
                                        :name="`items[${index}][quantity]`" x-model.number="item.quantity">
                             </div>
@@ -484,7 +496,7 @@
                             {{-- Unit Price --}}
                             <div class="col-span-3 sm:col-span-2">
                                 <label class="text-xs font-semibold text-muted block sm:hidden mb-1 text-right">Price (€)</label>
-                                <input type="number" min="0" step="0.01" class="ta-input !py-2 !text-sm font-bold text-right"
+                                <input type="number" min="0" step="0.01" class="ta-input !py-2 font-bold text-right"
                                        placeholder="0.00"
                                        :name="`items[${index}][unit_price]`" x-model.number="item.unit_price">
                             </div>
@@ -861,6 +873,7 @@
                 this.duplicate = null;
                 if (this.$refs.customerPhone) this.$refs.customerPhone.value = '';
                 if (this.$refs.customerName) this.$refs.customerName.value = '';
+                if (this.$refs.customerPhoneAlt) this.$refs.customerPhoneAlt.value = '';
                 if (this.$refs.customerEmail) this.$refs.customerEmail.value = '';
                 if (this.$refs.customerAddress) this.$refs.customerAddress.value = '';
                 if (this.$refs.customerState) this.$refs.customerState.value = '';
@@ -894,6 +907,9 @@
                         // Autofill customer inputs
                         if (this.$refs.customerName && (!this.$refs.customerName.value || this.$refs.customerName.value === data.customer.name)) {
                             this.$refs.customerName.value = data.customer.name || '';
+                        }
+                        if (this.$refs.customerPhoneAlt && (!this.$refs.customerPhoneAlt.value || this.$refs.customerPhoneAlt.value === data.customer.phone_alt)) {
+                            this.$refs.customerPhoneAlt.value = data.customer.phone_alt || '';
                         }
                         if (this.$refs.customerEmail && (!this.$refs.customerEmail.value || this.$refs.customerEmail.value === data.customer.email)) {
                             this.$refs.customerEmail.value = data.customer.email || '';

@@ -285,7 +285,8 @@ class OrderService
     {
         $fields = [
             'name'     => $data['customer_name'] ?? null,
-            'phone'    => $data['customer_phone'] ?? null,
+            'phone'     => $data['customer_phone'] ?? null,
+            'phone_alt' => $data['customer_phone_alt'] ?? null,
             'email'    => $data['customer_email'] ?? null,
             'address'  => $data['customer_address'] ?? null,
             'city'     => $data['customer_city'] ?? null,
