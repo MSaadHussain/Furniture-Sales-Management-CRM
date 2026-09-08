@@ -95,11 +95,11 @@
                     <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-brand/10 text-brand text-xs font-bold">
                         <i class="fa-solid fa-user"></i>
                     </span>
-                    <h3 class="text-base font-bold text-ink dark:text-white">Customer &amp; Order Details</h3>
+                    <h3 class="text-lg font-bold text-ink dark:text-white">Customer &amp; Order Details</h3>
                 </div>
                 <button type="button"
                         x-on:click="showMoreCustomer = !showMoreCustomer"
-                        class="text-xs font-semibold text-brand hover:underline transition">
+                        class="text-sm font-semibold text-brand hover:underline transition">
                     <span x-text="showMoreCustomer ? '− Hide Extra Details' : '+ Add Phone / Email / State'"></span>
                 </button>
             </div>
@@ -117,7 +117,7 @@
                                 <span class="font-bold text-ink dark:text-white text-sm" x-text="duplicate?.customer?.name"></span>
                                 <span class="rounded-full bg-brand/15 px-2 py-0.5 text-[10px] font-bold text-brand">Existing Customer</span>
                             </div>
-                            <p class="text-xs text-muted">
+                            <p class="text-sm text-muted">
                                 <span class="font-semibold text-brand" x-text="`${duplicate?.orders || 0} past orders`"></span>
                                 <span x-show="duplicate?.total_spent" x-text="` · Spent: ${duplicate?.total_spent}`"></span>
                                 <span x-show="duplicate?.last_order" x-text="` · Last: ${duplicate?.last_order}`"></span>
@@ -145,7 +145,7 @@
             {{-- Row 1: Phone & Name --}}
             <div class="grid grid-cols-1 gap-3.5 sm:grid-cols-12">
                 <div class="sm:col-span-5">
-                    <label class="text-sm font-semibold text-muted block mb-1">Phone Number <span class="text-danger">*</span></label>
+                    <label class="text-base font-semibold text-slate-500 dark:text-white block mb-1">Phone Number <span class="text-danger">*</span></label>
                     <div class="relative">
                         <input type="text" name="customer_phone" required maxlength="40"
                                value="{{ old('customer_phone', $customer?->phone) }}"
@@ -155,17 +155,17 @@
                                x-on:change="checkDuplicate($event.target.value)"
                                class="ta-input !py-2 font-semibold @error('customer_phone') !border-danger @enderror">
                     </div>
-                    @error('customer_phone')<p class="mt-1 text-xs text-danger">{{ $message }}</p>@enderror
+                    @error('customer_phone')<p class="mt-1 text-sm text-danger">{{ $message }}</p>@enderror
                 </div>
 
                 <div class="sm:col-span-7">
-                    <label class="text-sm font-semibold text-muted block mb-1">Customer Name <span class="text-danger">*</span></label>
+                    <label class="text-base font-semibold text-slate-500 dark:text-white block mb-1">Customer Name <span class="text-danger">*</span></label>
                     <input type="text" name="customer_name" required maxlength="255"
                            value="{{ old('customer_name', $customer?->name) }}"
                            x-ref="customerName"
                            placeholder="Customer full name"
                            class="ta-input !py-2 font-medium @error('customer_name') !border-danger @enderror">
-                    @error('customer_name')<p class="mt-1 text-xs text-danger">{{ $message }}</p>@enderror
+                    @error('customer_name')<p class="mt-1 text-sm text-danger">{{ $message }}</p>@enderror
                 </div>
             </div>
 
@@ -174,7 +174,7 @@
                  delivery location and the postal code drives the ZIP reports. --}}
             <div class="grid grid-cols-1 gap-3.5 sm:grid-cols-12">
                 <div class="sm:col-span-8">
-                    <label class="text-sm font-semibold text-muted block mb-1">Delivery Address</label>
+                    <label class="text-base font-semibold text-slate-500 dark:text-white block mb-1">Delivery Address</label>
                     <input type="text" name="customer_address" maxlength="255"
                            value="{{ old('customer_address', $customer?->address) }}"
                            x-ref="customerAddress"
@@ -183,13 +183,13 @@
                 </div>
 
                 <div class="sm:col-span-4">
-                    <label class="text-sm font-semibold text-muted block mb-1">Postal / ZIP Code <span class="text-danger">*</span></label>
+                    <label class="text-base font-semibold text-slate-500 dark:text-white block mb-1">Postal / ZIP Code <span class="text-danger">*</span></label>
                     <input type="text" name="customer_zip_code" required maxlength="20"
                            value="{{ old('customer_zip_code', $customer?->zip_code) }}"
                            x-ref="customerZip"
                            placeholder="Postal code"
                            class="ta-input !py-2 font-medium @error('customer_zip_code') !border-danger @enderror">
-                    @error('customer_zip_code')<p class="mt-1 text-xs text-danger">{{ $message }}</p>@enderror
+                    @error('customer_zip_code')<p class="mt-1 text-sm text-danger">{{ $message }}</p>@enderror
                 </div>
             </div>
 
@@ -197,19 +197,19 @@
             <div x-show="showMoreCustomer" x-cloak
                  class="pt-2 grid grid-cols-1 gap-3.5 sm:grid-cols-3">
                 <div>
-                    <label class="text-sm font-semibold text-muted block mb-1">
-                        Additional Phone <span class="font-normal text-muted">(optional)</span>
+                    <label class="text-base font-semibold text-slate-500 dark:text-white block mb-1">
+                        Additional Phone <span class="font-normal text-slate-500 dark:text-gray-300">(optional)</span>
                     </label>
                     <input type="text" name="customer_phone_alt" maxlength="40"
                            value="{{ old('customer_phone_alt', $customer?->phone_alt) }}"
                            x-ref="customerPhoneAlt"
                            placeholder="Second contact number"
                            class="ta-input !py-2 @error('customer_phone_alt') !border-danger @enderror">
-                    @error('customer_phone_alt')<p class="mt-1 text-xs text-danger">{{ $message }}</p>@enderror
+                    @error('customer_phone_alt')<p class="mt-1 text-sm text-danger">{{ $message }}</p>@enderror
                 </div>
 
                 <div>
-                    <label class="text-sm font-semibold text-muted block mb-1">Email Address</label>
+                    <label class="text-base font-semibold text-slate-500 dark:text-white block mb-1">Email Address</label>
                     <input type="email" name="customer_email" maxlength="255"
                            value="{{ old('customer_email', $customer?->email) }}"
                            x-ref="customerEmail"
@@ -218,7 +218,7 @@
                 </div>
 
                 <div>
-                    <label class="text-sm font-semibold text-muted block mb-1">State / Province</label>
+                    <label class="text-base font-semibold text-slate-500 dark:text-white block mb-1">State / Province</label>
                     <input type="text" name="customer_state" maxlength="120"
                            value="{{ old('customer_state', $customer?->state) }}"
                            x-ref="customerState"
@@ -231,7 +231,7 @@
             <div class="grid grid-cols-1 gap-3.5 sm:grid-cols-12 pt-1">
                 {{-- Sales Person --}}
                 <div class="sm:col-span-4">
-                    <label class="text-sm font-semibold text-muted block mb-1">Sales Person <span class="text-danger">*</span></label>
+                    <label class="text-base font-semibold text-slate-500 dark:text-white block mb-1">Sales Person <span class="text-danger">*</span></label>
                     <select name="sales_person_id" required class="ta-input !py-2 font-semibold @error('sales_person_id') !border-danger @enderror">
                         <option value="">-- Select Sales Person --</option>
                         @foreach ($salesPersons as $person)
@@ -241,23 +241,23 @@
                             </option>
                         @endforeach
                     </select>
-                    @error('sales_person_id')<p class="mt-1 text-xs text-danger">{{ $message }}</p>@enderror
+                    @error('sales_person_id')<p class="mt-1 text-sm text-danger">{{ $message }}</p>@enderror
                 </div>
 
                 {{-- Order Date --}}
                 <div class="sm:col-span-4">
-                    <label class="text-sm font-semibold text-muted block mb-1">Order Date <span class="text-danger">*</span></label>
+                    <label class="text-base font-semibold text-slate-500 dark:text-white block mb-1">Order Date <span class="text-danger">*</span></label>
                     <input type="text" name="order_created_at" required
                            x-datepicker
                            value="{{ old('order_created_at', optional($order->order_created_at)->format('Y-m-d') ?: today()->format('Y-m-d')) }}"
                            class="ta-input !py-2 font-medium @error('order_created_at') !border-danger @enderror">
-                    @error('order_created_at')<p class="mt-1 text-xs text-danger">{{ $message }}</p>@enderror
+                    @error('order_created_at')<p class="mt-1 text-sm text-danger">{{ $message }}</p>@enderror
                 </div>
 
                 {{-- Delivery Date --}}
                 <div class="sm:col-span-4">
                     <div class="flex items-center justify-between mb-1">
-                        <label class="text-xs font-semibold text-muted block">Delivery Date <span class="text-danger">*</span></label>
+                        <label class="text-xs font-semibold text-slate-500 dark:text-white block">Delivery Date <span class="text-danger">*</span></label>
                         <div class="flex items-center gap-1">
                             <button type="button" x-on:click="setDeliveryDays(1)" class="rounded bg-surface px-1.5 py-0.5 text-[11px] font-semibold text-brand hover:bg-brand/10 dark:bg-boxdark2">Tomorrow</button>
                             <button type="button" x-on:click="setDeliveryDays(2)" class="rounded bg-surface px-1.5 py-0.5 text-[11px] font-semibold text-ink hover:text-brand dark:bg-boxdark2">+2d</button>
@@ -270,21 +270,21 @@
                            x-datepicker
                            value="{{ old('requested_delivery_date', optional($order->requested_delivery_date)->format('Y-m-d') ?: today()->addDay()->format('Y-m-d')) }}"
                            class="ta-input !py-2 font-medium @error('requested_delivery_date') !border-danger @enderror">
-                    @error('requested_delivery_date')<p class="mt-1 text-xs text-danger">{{ $message }}</p>@enderror
+                    @error('requested_delivery_date')<p class="mt-1 text-sm text-danger">{{ $message }}</p>@enderror
                 </div>
             </div>
 
             {{-- Optional Notes & Status Toggle --}}
             <div class="pt-1">
                 <button type="button" x-on:click="showMoreOptions = !showMoreOptions"
-                        class="inline-flex items-center gap-1.5 text-xs font-semibold text-muted hover:text-brand transition">
+                        class="inline-flex items-center gap-1.5 text-sm font-semibold text-muted hover:text-brand transition">
                     <i class="fa-solid fa-sliders text-[10px]"></i>
                     <span x-text="showMoreOptions ? '− Hide Notes & Order Status' : '+ Add Delivery Notes & Status'"></span>
                 </button>
 
                 <div x-show="showMoreOptions" x-cloak class="mt-3 grid grid-cols-1 gap-3.5 sm:grid-cols-12 p-3.5 rounded-xl bg-surface/50 border border-line/60 dark:border-strokedark dark:bg-boxdark2">
                     <div class="sm:col-span-4">
-                        <label class="text-sm font-semibold text-muted block mb-1">Order Status</label>
+                        <label class="text-base font-semibold text-slate-500 dark:text-white block mb-1">Order Status</label>
                         <select name="order_status" class="ta-input !py-2 font-semibold">
                             <option value="new" @selected(!in_array(old('order_status', $order->order_status?->value ?? 'new'), ['delivered', 'cancelled', 'returned']))>Pending</option>
                             <option value="delivered" @selected(old('order_status', $order->order_status?->value ?? 'new') === 'delivered')>Delivered</option>
@@ -298,7 +298,7 @@
 
                     @if ($isEdit)
                         <div class="sm:col-span-4">
-                            <label class="text-sm font-semibold text-muted block mb-1">Actual Delivery Date</label>
+                            <label class="text-base font-semibold text-slate-500 dark:text-white block mb-1">Actual Delivery Date</label>
                             <input type="text" name="actual_delivery_date"
                                    x-datepicker="{ maxDate: 'today' }"
                                    value="{{ old('actual_delivery_date', optional($order->actual_delivery_date)->format('Y-m-d')) }}"
@@ -307,7 +307,7 @@
                     @endif
 
                     <div class="{{ $isEdit ? 'sm:col-span-4' : 'sm:col-span-8' }}">
-                        <label class="text-sm font-semibold text-muted block mb-1">Delivery Notes</label>
+                        <label class="text-base font-semibold text-slate-500 dark:text-white block mb-1">Delivery Notes</label>
                         <input type="text" name="notes" maxlength="2000" class="ta-input !py-2"
                                placeholder="Gate code, instructions..."
                                value="{{ old('notes', $order->notes) }}">
@@ -325,7 +325,7 @@
                     <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-brand/10 text-brand text-xs font-bold">
                         <i class="fa-solid fa-couch"></i>
                     </span>
-                    <h3 class="text-base font-bold text-ink dark:text-white">Order Items</h3>
+                    <h3 class="text-lg font-bold text-ink dark:text-white">Order Items</h3>
                 </div>
                 <button type="button"
                         class="inline-flex items-center gap-1.5 rounded-lg border border-line bg-surface px-3 py-1.5 text-xs font-bold text-brand hover:bg-brand/10 transition dark:border-strokedark dark:bg-boxdark2"
@@ -336,7 +336,7 @@
             </div>
 
             {{-- Column Headers for Desktop --}}
-            <div class="hidden sm:grid sm:grid-cols-12 gap-3 text-xs font-bold uppercase tracking-wider text-muted px-3">
+            <div class="hidden sm:grid sm:grid-cols-12 gap-3 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-white px-3">
                 <div class="col-span-5">Product</div>
                 <div class="col-span-3">Colour</div>
                 <div class="col-span-2 text-center">Qty</div>
@@ -371,7 +371,7 @@
 
                             {{-- Product Name Autocomplete --}}
                             <div class="col-span-12 sm:col-span-5 relative">
-                                <label class="text-xs font-semibold text-muted block sm:hidden mb-1">Product</label>
+                                <label class="text-xs font-semibold text-slate-500 dark:text-white block sm:hidden mb-1">Product</label>
                                 <input type="hidden" :name="`items[${index}][product_id]`" x-model="item.product_id">
                                 
                                 <div class="relative">
@@ -405,7 +405,7 @@
                                                 class="flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-left text-sm transition hover:bg-brand/10 dark:hover:bg-boxdark2">
                                             <div>
                                                 <div class="font-semibold text-ink dark:text-white" x-text="p.name"></div>
-                                                <div class="text-xs text-muted">
+                                                <div class="text-sm text-muted">
                                                     <span class="font-mono" x-text="p.code"></span>
                                                     <span x-show="p.category" x-text="` • ${p.category}`"></span>
                                                 </div>
@@ -430,7 +430,7 @@
 
                             {{-- Colour Combobox --}}
                             <div class="col-span-6 sm:col-span-3 relative">
-                                <label class="text-xs font-semibold text-muted block sm:hidden mb-1">Colour</label>
+                                <label class="text-xs font-semibold text-slate-500 dark:text-white block sm:hidden mb-1">Colour</label>
                                 <input type="hidden" :name="`items[${index}][colour_id]`" x-model="item.colour_id">
 
                                 <div class="relative">
@@ -487,7 +487,7 @@
 
                             {{-- Quantity --}}
                             <div class="col-span-3 sm:col-span-2">
-                                <label class="text-xs font-semibold text-muted block sm:hidden mb-1 text-center">Qty</label>
+                                <label class="text-xs font-semibold text-slate-500 dark:text-white block sm:hidden mb-1 text-center">Qty</label>
                                 <input type="number" min="1" step="1" class="ta-input !py-2 font-bold text-center"
                                        placeholder="1"
                                        :name="`items[${index}][quantity]`" x-model.number="item.quantity">
@@ -495,7 +495,7 @@
 
                             {{-- Unit Price --}}
                             <div class="col-span-3 sm:col-span-2">
-                                <label class="text-xs font-semibold text-muted block sm:hidden mb-1 text-right">Price (€)</label>
+                                <label class="text-xs font-semibold text-slate-500 dark:text-white block sm:hidden mb-1 text-right">Price (€)</label>
                                 <input type="number" min="0" step="0.01" class="ta-input !py-2 font-bold text-right"
                                        placeholder="0.00"
                                        :name="`items[${index}][unit_price]`" x-model.number="item.unit_price">
@@ -516,7 +516,7 @@
 
                             <div class="flex items-center gap-3">
                                 <div class="font-bold text-ink dark:text-white text-xs whitespace-nowrap">
-                                    <span class="text-muted font-normal">Line Total: </span>
+                                    <span class="text-slate-500 dark:text-gray-300 font-normal">Line Total: </span>
                                     <span class="text-brand font-black" x-text="money(lineTotal(item))"></span>
                                 </div>
 
@@ -548,7 +548,7 @@
         <div class="pt-6 border-t border-line dark:border-strokedark flex flex-col sm:flex-row items-center justify-between gap-4">
             {{-- Grand Total --}}
             <div class="flex items-baseline gap-2">
-                <span class="text-xs font-bold uppercase tracking-wider text-muted">Total Order Amount:</span>
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-white">Total Order Amount:</span>
                 <span class="text-3xl font-black text-brand tracking-tight" x-text="money(grandTotal)"></span>
             </div>
 
@@ -582,10 +582,10 @@
                         <i class="fa-solid fa-clock-rotate-left text-lg"></i>
                     </div>
                     <div>
-                        <h3 class="text-base font-bold text-ink dark:text-white">
+                        <h3 class="text-lg font-bold text-ink dark:text-white">
                             Order History — <span x-text="duplicate?.customer?.name"></span>
                         </h3>
-                        <p class="text-xs text-muted">
+                        <p class="text-sm text-muted">
                             Phone: <span class="font-medium text-ink dark:text-gray-300" x-text="duplicate?.customer?.phone"></span>
                             • Total Spent: <strong class="text-brand" x-text="duplicate?.total_spent"></strong>
                             • Total Orders: <strong class="text-ink dark:text-white" x-text="duplicate?.orders"></strong>
@@ -655,7 +655,7 @@
 
             {{-- Modal Footer --}}
             <div class="flex items-center justify-between border-t border-line px-6 py-3.5 bg-surface/30 dark:border-strokedark dark:bg-boxdark2">
-                <span class="text-xs text-muted">Press ESC or click anywhere outside to close</span>
+                <span class="text-sm text-muted">Press ESC or click anywhere outside to close</span>
                 <button type="button" x-on:click="closeOrdersModal()" class="btn btn-primary text-xs px-4 py-2">
                     Continue With Order
                 </button>
