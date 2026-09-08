@@ -167,6 +167,149 @@
         @endif
     </x-card>
 
+    {{-- ============================ Row 4: Delivered vs Cancelled Ratio ============================ --}}
+    <div class="grid grid-cols-1 gap-3.5 sm:grid-cols-3">
+        <div class="rounded-2xl border border-line bg-white p-4 shadow-sm dark:border-strokedark dark:bg-boxdark">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-bold uppercase tracking-wider text-muted">Team Completion Rate</span>
+                <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 text-xs">
+                    <i class="fa-solid fa-circle-check"></i>
+                </span>
+            </div>
+            <p class="mt-2 text-2xl font-black text-emerald-600">
+                {{ $team['success_rate'] === null ? 'N/A' : $team['success_rate'] . '%' }}
+            </p>
+            <p class="text-xs text-muted mt-0.5">
+                {{ number_format($team['delivered']) }} delivered &middot; {{ number_format($team['lost']) }} cancelled
+                @if ($team['in_progress'] > 0)
+                    &middot; {{ number_format($team['in_progress']) }} still open
+                @endif
+            </p>
+        </div>
+
+        <div class="rounded-2xl border border-line bg-white p-4 shadow-sm dark:border-strokedark dark:bg-boxdark">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-bold uppercase tracking-wider text-muted">Best Completion</span>
+                <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-brand/10 text-brand text-xs">
+                    <i class="fa-solid fa-award"></i>
+                </span>
+            </div>
+            <p class="mt-2 text-xl font-bold text-ink dark:text-white truncate">{{ $bestRate?->name ?? 'N/A' }}</p>
+            <p class="text-xs text-muted mt-0.5">
+                @if ($bestRate)
+                    <strong class="text-emerald-600 font-semibold">{{ $bestRate->success_rate }}%</strong>
+                    ({{ $bestRate->delivered }} delivered / {{ $bestRate->lost }} cancelled)
+                @else
+                    No settled orders in period
+                @endif
+            </p>
+        </div>
+
+        <div class="rounded-2xl border border-line bg-white p-4 shadow-sm dark:border-strokedark dark:bg-boxdark">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-bold uppercase tracking-wider text-muted">Most Cancellations</span>
+                <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-danger/10 text-danger text-xs">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                </span>
+            </div>
+            {{-- Left blank when nobody has cancelled anything: naming a seller
+                 with a clean record as the top canceller would be misleading. --}}
+            @if ($worstRate)
+                <p class="mt-2 text-xl font-bold text-ink dark:text-white truncate">{{ $worstRate->name }}</p>
+                <p class="text-xs text-muted mt-0.5">
+                    <strong class="text-danger font-semibold">{{ $worstRate->success_rate }}%</strong>
+                    completion ({{ $worstRate->lost }} cancelled)
+                </p>
+            @else
+                <p class="mt-2 text-xl font-bold text-muted">&mdash;</p>
+                <p class="text-xs text-muted mt-0.5">No cancellations in this period</p>
+            @endif
+        </div>
+    </div>
+
+    <x-card padding="p-0" title="Delivered vs Cancelled Ratio"
+            :subtitle="'How many orders each seller actually completed · ' . $range['label']">
+        @php $settledRows = $rows->filter(fn ($r) => $r->total > 0); @endphp
+
+        @if ($settledRows->isEmpty())
+            <x-empty-state icon="fa-scale-balanced" title="No orders in this period"
+                           message="Ratios appear once orders have been attributed to a sales person." />
+        @else
+            <div class="overflow-x-auto">
+                <table class="w-full min-w-[720px]">
+                    <thead class="border-b border-line dark:border-strokedark">
+                        <tr>
+                            <th class="ta-th">Sales Person</th>
+                            <th class="ta-th text-right">Orders</th>
+                            <th class="ta-th text-right">Delivered</th>
+                            <th class="ta-th text-right">Cancelled</th>
+                            <th class="ta-th text-right">In Progress</th>
+                            <th class="ta-th text-right">Ratio</th>
+                            <th class="ta-th">Completion</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-line dark:divide-strokedark">
+                        @foreach ($settledRows->sortByDesc('success_rate') as $row)
+                            <tr class="transition hover:bg-surface dark:hover:bg-boxdark/50">
+                                <td class="ta-td font-medium">{{ $row->name }}</td>
+                                <td class="ta-td text-right text-muted">{{ number_format($row->total) }}</td>
+                                <td class="ta-td text-right font-semibold text-emerald-600">{{ number_format($row->delivered) }}</td>
+                                <td class="ta-td text-right font-semibold {{ $row->lost > 0 ? 'text-danger' : 'text-muted' }}">
+                                    {{ number_format($row->lost) }}
+                                    @if ($row->returned > 0)
+                                        <span class="block text-[10px] font-normal text-muted">incl. {{ $row->returned }} returned</span>
+                                    @endif
+                                </td>
+                                <td class="ta-td text-right text-muted">{{ number_format($row->in_progress) }}</td>
+                                <td class="ta-td text-right font-bold">
+                                    @if ($row->ratio !== null)
+                                        <span title="{{ $row->ratio }} delivered for every 1 cancelled">{{ $row->ratio }} : 1</span>
+                                    @elseif ($row->delivered > 0)
+                                        <span class="text-emerald-600" title="No cancellations">{{ $row->delivered }} : 0</span>
+                                    @else
+                                        <span class="text-muted">--</span>
+                                    @endif
+                                </td>
+                                <td class="ta-td">
+                                    @if ($row->success_rate === null)
+                                        <span class="text-xs text-muted">Nothing settled yet</span>
+                                    @else
+                                        <div class="flex items-center gap-2">
+                                            {{-- Delivered vs cancelled, as a share of settled orders only. --}}
+                                            <span class="flex h-2 w-28 overflow-hidden rounded-full bg-line dark:bg-strokedark">
+                                                <span class="block h-full bg-emerald-500" style="width: {{ $row->success_rate }}%"></span>
+                                                <span class="block h-full bg-danger" style="width: {{ 100 - $row->success_rate }}%"></span>
+                                            </span>
+                                            <span class="text-xs font-semibold {{ $row->success_rate >= 80 ? 'text-emerald-600' : ($row->success_rate >= 50 ? 'text-amber-500' : 'text-danger') }}">
+                                                {{ $row->success_rate }}%
+                                            </span>
+                                        </div>
+                                    @endif
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                    <tfoot class="border-t border-line bg-surface/50 dark:border-strokedark dark:bg-boxdark2">
+                        <tr>
+                            <td class="ta-td font-bold">Team total</td>
+                            <td class="ta-td text-right font-bold">{{ number_format($team['total']) }}</td>
+                            <td class="ta-td text-right font-bold text-emerald-600">{{ number_format($team['delivered']) }}</td>
+                            <td class="ta-td text-right font-bold text-danger">{{ number_format($team['lost']) }}</td>
+                            <td class="ta-td text-right font-bold text-muted">{{ number_format($team['in_progress']) }}</td>
+                            <td class="ta-td text-right font-bold">{{ $team['ratio'] !== null ? $team['ratio'] . ' : 1' : '--' }}</td>
+                            <td class="ta-td font-bold">{{ $team['success_rate'] === null ? 'N/A' : $team['success_rate'] . '%' }}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+
+            <p class="border-t border-line px-5 py-3 text-[11px] text-muted dark:border-strokedark">
+                Completion counts only orders that reached an outcome, so orders still in progress
+                do not drag a seller down. Ratio reads as delivered orders per cancelled order.
+            </p>
+        @endif
+    </x-card>
+
     <p class="text-[11px] text-muted">
         Sales Persons do not see this report. It is visible to Admin and Manager only.
     </p>

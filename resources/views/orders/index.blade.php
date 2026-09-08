@@ -64,6 +64,13 @@
     <div class="rounded-xl border border-line bg-white p-2.5 shadow-xs dark:border-strokedark dark:bg-boxdark"
          x-data="{ showAdvanced: {{ $hasAdvancedFilters ? 'true' : 'false' }} }">
         <form method="GET" class="space-y-2">
+            {{-- Carry the active sort through a filter submit, otherwise
+                 filtering would silently reset the column order. --}}
+            @if (request()->filled('sort'))
+                <input type="hidden" name="sort" value="{{ request('sort') }}">
+                <input type="hidden" name="direction" value="{{ request('direction') }}">
+            @endif
+
             {{-- Main 1-Row Filter Controls --}}
             <div class="flex flex-wrap items-center gap-2">
                 {{-- Search --}}
@@ -178,13 +185,14 @@
                 <table class="w-full text-left table-auto">
                     <thead class="border-b border-line dark:border-strokedark bg-surface/40 dark:bg-boxdark2">
                         <tr>
-                            <th class="ta-th py-3 px-3">Order</th>
-                            <th class="ta-th py-3 px-3">Customer</th>
+                            {{-- Click any header to sort; clicking the active one flips direction. --}}
+                            <x-sort-header column="order_number" label="Order" class="py-3 px-3" />
+                            <x-sort-header column="customer" label="Customer" class="py-3 px-3" default="asc" />
                             <th class="ta-th py-3 px-3">Items</th>
-                            <th class="ta-th py-3 px-3">Sales Person</th>
-                            <th class="ta-th py-3 px-3">Delivery</th>
-                            <th class="ta-th py-3 px-3">Order Status</th>
-                            <th class="ta-th py-3 px-3 text-right">Total</th>
+                            <x-sort-header column="sales_person" label="Sales Person" class="py-3 px-3" default="asc" />
+                            <x-sort-header column="requested" label="Delivery" class="py-3 px-3" />
+                            <x-sort-header column="order_status" label="Order Status" class="py-3 px-3" default="asc" />
+                            <x-sort-header column="total" label="Total" align="right" class="py-3 px-3" />
                             <th class="ta-th py-3 px-3 text-right">Action</th>
                         </tr>
                     </thead>

@@ -185,9 +185,11 @@ class ReportController extends Controller implements HasMiddleware
             'topCloser'    => $topCloser,
             'topTicket'    => $topTicket,
             'team'         => $team,
-            // Best and worst completion rate, among sellers with settled orders.
+            // Best completion needs a settled order to be meaningful.
             'bestRate'     => $rows->filter(fn ($r) => $r->settled > 0)->sortByDesc('success_rate')->first(),
-            'worstRate'    => $rows->filter(fn ($r) => $r->settled > 0)->sortBy('success_rate')->first(),
+            // Worst needs an actual cancellation. Without that filter a seller
+            // with a spotless record gets labelled the biggest canceller.
+            'worstRate'    => $rows->filter(fn ($r) => $r->lost > 0)->sortBy('success_rate')->first(),
         ]);
     }
 
@@ -255,14 +257,7 @@ class ReportController extends Controller implements HasMiddleware
                 ]),
                 $format,
             ),
-            'sales-persons' => $this->exportRows(
-                'sales-person-report-' . $stamp,
-                ['Sales Person', 'Orders', 'Revenue', 'Average Order Value'],
-                $this->sales->salesPersonPerformance($from, $to)->map(fn ($r) => [
-                    $r->name, $r->orders, $r->revenue, round((float) $r->avg_order, 2),
-                ]),
-                $format,
-            ),
+            'sales-persons' => $this->exportSalesPersons($from, $to, $format, $stamp),
             'deliveries'    => $this->exportDeliveries($request, $from, $to, $format, $stamp),
             default         => abort(404),
         };
@@ -295,6 +290,43 @@ class ReportController extends Controller implements HasMiddleware
         };
 
         return TabularExport::download('sales-report-' . $stamp, $headers, $rows(), $format);
+    }
+
+    /** Sales person report export, including the fulfilment ratio columns. */
+    private function exportSalesPersons($from, $to, string $format, string $stamp)
+    {
+        $fulfilment = $this->sales->salesPersonFulfilment($from, $to);
+        $blank      = SalesAnalyticsService::fulfilmentRow(0, 0, 0);
+
+        $rows = $this->sales->salesPersonPerformance($from, $to)->map(function ($r) use ($fulfilment, $blank) {
+            $f = $fulfilment->get($r->id, $blank);
+
+            return [
+                $r->name,
+                $r->orders,
+                $r->revenue,
+                round((float) $r->avg_order, 2),
+                $f['total'],
+                $f['delivered'],
+                $f['cancelled'],
+                $f['returned'],
+                $f['in_progress'],
+                $f['ratio'] !== null ? $f['ratio'] . ':1' : 'no cancellations',
+                $f['success_rate'] === null ? 'N/A' : $f['success_rate'] . '%',
+                $f['cancel_rate'] === null ? 'N/A' : $f['cancel_rate'] . '%',
+            ];
+        });
+
+        return $this->exportRows(
+            'sales-person-report-' . $stamp,
+            [
+                'Sales Person', 'Orders (Countable)', 'Revenue', 'Average Order Value',
+                'Total Orders', 'Delivered', 'Cancelled', 'Returned', 'In Progress',
+                'Delivered:Cancelled Ratio', 'Completion Rate', 'Cancellation Rate',
+            ],
+            $rows,
+            $format,
+        );
     }
 
     private function exportDeliveries(Request $request, $from, $to, string $format, string $stamp)

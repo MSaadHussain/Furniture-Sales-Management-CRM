@@ -36,9 +36,10 @@ class OrderController extends Controller implements HasMiddleware
 
     public function index(Request $request)
     {
-        $orders = $this->filtered($request)
+        [$sort, $direction] = $this->resolveSort($request);
+
+        $orders = $this->sorted($this->filtered($request), $sort, $direction)
             ->with(['customer', 'salesPerson', 'items'])
-            ->latest('order_created_at')
             ->paginate(20)
             ->withQueryString();
 
@@ -366,7 +367,71 @@ class OrderController extends Controller implements HasMiddleware
         return [
             'search', 'order_status', 'payment_status', 'sales_person_id',
             'zip_code', 'category_id', 'from', 'to', 'delivery_from', 'delivery_to', 'performance',
+            'sort', 'direction',
         ];
+    }
+
+    /* ---------------------------------------------------------------------
+     | Sorting
+     |--------------------------------------------------------------------- */
+
+    /**
+     * Sortable columns, mapped to what they actually order by. Whitelisted so
+     * the query string can never reach raw SQL.
+     *
+     * Customer and Sales Person sort on a correlated subquery rather than a
+     * join, so the row count and the pagination totals stay correct.
+     */
+    public const SORTS = [
+        'order_number'  => 'orders.order_number',
+        'created'       => 'orders.order_created_at',
+        'customer'      => 'customer_name',
+        'zip_code'      => 'orders.zip_code',
+        'sales_person'  => 'sales_person_name',
+        'requested'     => 'orders.requested_delivery_date',
+        'delivered'     => 'orders.actual_delivery_date',
+        'order_status'  => 'orders.order_status',
+        'payment_status'=> 'orders.payment_status',
+        'total'         => 'orders.grand_total',
+        'balance'       => 'orders.balance_due',
+    ];
+
+    /** @return array{0:string,1:string} the active column key and direction */
+    private function resolveSort(Request $request): array
+    {
+        $sort = (string) $request->query('sort', 'created');
+
+        if (! array_key_exists($sort, self::SORTS)) {
+            $sort = 'created';
+        }
+
+        $direction = strtolower((string) $request->query('direction')) === 'asc' ? 'asc' : 'desc';
+
+        return [$sort, $direction];
+    }
+
+    private function sorted($query, string $sort, string $direction)
+    {
+        $column = self::SORTS[$sort];
+
+        // The two name columns are not on the orders table.
+        if ($column === 'customer_name') {
+            $query->orderBy(
+                Customer::select('name')->whereColumn('customers.id', 'orders.customer_id'),
+                $direction,
+            );
+        } elseif ($column === 'sales_person_name') {
+            $query->orderBy(
+                User::select('name')->whereColumn('users.id', 'orders.sales_person_id'),
+                $direction,
+            );
+        } else {
+            $query->orderBy($column, $direction);
+        }
+
+        // Stable tiebreak so paging never repeats or drops a row when the
+        // sorted column holds duplicates.
+        return $query->orderBy('orders.id', 'desc');
     }
 
     /** Server-side filtering only; nothing is filtered in the browser (30). */
