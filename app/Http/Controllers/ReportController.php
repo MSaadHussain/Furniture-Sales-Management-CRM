@@ -131,23 +131,30 @@ class ReportController extends Controller implements HasMiddleware
             ->get(['id', 'name']);
 
         $performance = $this->sales->salesPersonPerformance($from, $to)->keyBy('id');
+        $fulfilment  = $this->sales->salesPersonFulfilment($from, $to);
+        $blank       = SalesAnalyticsService::fulfilmentRow(0, 0, 0);
 
         // Include all active sales persons so the comparison board covers the full team
-        $rows = $activeSellers->map(function ($user) use ($performance) {
+        $rows = $activeSellers->map(function ($user) use ($performance, $fulfilment, $blank) {
             $perf = $performance->get($user->id);
-            return (object) [
+            return (object) array_merge([
                 'id'        => $user->id,
                 'name'      => $user->name,
                 'orders'    => (int) ($perf->orders ?? 0),
                 'revenue'   => (float) ($perf->revenue ?? 0),
                 'avg_order' => (float) ($perf->avg_order ?? 0),
-            ];
+            ], $fulfilment->get($user->id, $blank));
         });
 
-        // Also append any historical attributed sellers who closed orders in this window
+        // Also append any historical attributed sellers who closed orders in this
+        // window (deactivated staff, Managers, Admins), so the ratios cover
+        // every order rather than only the current active roster.
         foreach ($performance as $perf) {
             if (! $rows->contains('id', $perf->id)) {
-                $rows->push($perf);
+                $rows->push((object) array_merge(
+                    (array) $perf,
+                    $fulfilment->get($perf->id, $blank),
+                ));
             }
         }
 
@@ -159,6 +166,16 @@ class ReportController extends Controller implements HasMiddleware
         $topCloser    = $rows->sortByDesc('orders')->first(fn ($r) => $r->orders > 0);
         $topTicket    = $rows->sortByDesc('avg_order')->first(fn ($r) => $r->avg_order > 0);
 
+        // Team-wide fulfilment, so each seller can be read against the average.
+        $team = SalesAnalyticsService::fulfilmentRow(
+            (int) $rows->sum('total'),
+            (int) $rows->sum('delivered'),
+            (int) $rows->sum('cancelled'),
+            (int) $rows->sum('returned'),
+            (float) $rows->sum('delivered_value'),
+            (float) $rows->sum('cancelled_value'),
+        );
+
         return view('reports.sales-persons', $this->shared($from, $to, $label, $preset) + [
             'rows'         => $rows,
             'total'        => $totalRevenue,
@@ -167,6 +184,10 @@ class ReportController extends Controller implements HasMiddleware
             'topEarner'    => $topEarner,
             'topCloser'    => $topCloser,
             'topTicket'    => $topTicket,
+            'team'         => $team,
+            // Best and worst completion rate, among sellers with settled orders.
+            'bestRate'     => $rows->filter(fn ($r) => $r->settled > 0)->sortByDesc('success_rate')->first(),
+            'worstRate'    => $rows->filter(fn ($r) => $r->settled > 0)->sortBy('success_rate')->first(),
         ]);
     }
 

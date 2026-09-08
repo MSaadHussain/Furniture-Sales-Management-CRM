@@ -238,6 +238,78 @@ class SalesAnalyticsService
             ->get();
     }
 
+    /**
+     * Fulfilment outcomes per sales person: how many of the orders they wrote
+     * completed, and how many fell through.
+     *
+     * Unlike salesPersonPerformance(), this counts EVERY order including
+     * cancelled and returned ones, because the whole point is the ratio
+     * between them.
+     *
+     * @return Collection<int,array<string,mixed>> keyed by sales person id
+     */
+    public function salesPersonFulfilment(CarbonImmutable $from, CarbonImmutable $to): Collection
+    {
+        return Order::query()
+            ->createdBetween($from, $to)
+            ->whereNotNull('orders.sales_person_id')
+            ->selectRaw('orders.sales_person_id as id')
+            ->selectRaw('COUNT(*) as total')
+            ->selectRaw('SUM(orders.order_status = ?) as delivered', [OrderStatus::Delivered->value])
+            ->selectRaw('SUM(orders.order_status = ?) as cancelled', [OrderStatus::Cancelled->value])
+            ->selectRaw('SUM(orders.order_status = ?) as returned', [OrderStatus::Returned->value])
+            ->selectRaw('COALESCE(SUM(CASE WHEN orders.order_status = ? THEN orders.grand_total END), 0) as delivered_value', [OrderStatus::Delivered->value])
+            ->selectRaw('COALESCE(SUM(CASE WHEN orders.order_status = ? THEN orders.grand_total END), 0) as cancelled_value', [OrderStatus::Cancelled->value])
+            ->groupBy('orders.sales_person_id')
+            ->get()
+            ->keyBy('id')
+            ->map(fn ($row) => self::fulfilmentRow(
+                (int) $row->total,
+                (int) $row->delivered,
+                (int) $row->cancelled,
+                (int) $row->returned,
+                (float) $row->delivered_value,
+                (float) $row->cancelled_value,
+            ));
+    }
+
+    /**
+     * Shapes one fulfilment row and derives its ratios.
+     *
+     * `success_rate` deliberately ignores orders that are still in progress —
+     * an order that has not resolved yet is neither a win nor a loss, and
+     * counting it as a loss would punish a seller for recent orders.
+     */
+    public static function fulfilmentRow(
+        int $total,
+        int $delivered,
+        int $cancelled,
+        int $returned = 0,
+        float $deliveredValue = 0,
+        float $cancelledValue = 0,
+    ): array {
+        $lost    = $cancelled + $returned;
+        $settled = $delivered + $lost;
+
+        return [
+            'total'           => $total,
+            'delivered'       => $delivered,
+            'cancelled'       => $cancelled,
+            'returned'        => $returned,
+            'lost'            => $lost,
+            'settled'         => $settled,
+            'in_progress'     => max(0, $total - $settled),
+            'delivered_value' => $deliveredValue,
+            'cancelled_value' => $cancelledValue,
+            // Of the orders that reached an outcome, how many completed.
+            'success_rate'    => $settled > 0 ? round(($delivered / $settled) * 100, 1) : null,
+            // Cancellations as a share of everything they wrote.
+            'cancel_rate'     => $total > 0 ? round(($lost / $total) * 100, 1) : null,
+            // Delivered-per-cancelled, e.g. 4.0 means 4 delivered for each lost.
+            'ratio'           => $lost > 0 ? round($delivered / $lost, 1) : null,
+        ];
+    }
+
     /* ---------------------------------------------------------------------
      | Customer analytics (requirements 25)
      |--------------------------------------------------------------------- */

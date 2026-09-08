@@ -77,7 +77,8 @@
     <div class="rounded-2xl border border-line bg-white p-4 sm:p-6 shadow-xs dark:border-strokedark dark:bg-boxdark space-y-6"
          x-data="{ 
              showMoreCustomer: {{ ($customer?->email || $customer?->state || old('customer_email') || old('customer_state')) ? 'true' : 'false' }},
-             showMoreOptions: {{ ($isEdit || old('notes') || old('actual_delivery_date')) ? 'true' : 'false' }}
+             {{-- Order status and delivery notes are shown expanded by default. --}}
+             showMoreOptions: true
          }">
         
         <input type="hidden" name="customer_id" x-model="customerId">
@@ -141,9 +142,9 @@
                 </div>
             </div>
 
-            {{-- Row 1: Phone, Name, ZIP Code --}}
+            {{-- Row 1: Phone & Name --}}
             <div class="grid grid-cols-1 gap-3.5 sm:grid-cols-12">
-                <div class="sm:col-span-4">
+                <div class="sm:col-span-5">
                     <label class="text-xs font-semibold text-muted block mb-1">Phone Number <span class="text-danger">*</span></label>
                     <div class="relative">
                         <input type="text" name="customer_phone" required maxlength="40"
@@ -157,7 +158,7 @@
                     @error('customer_phone')<p class="mt-1 text-xs text-danger">{{ $message }}</p>@enderror
                 </div>
 
-                <div class="sm:col-span-5">
+                <div class="sm:col-span-7">
                     <label class="text-xs font-semibold text-muted block mb-1">Customer Name <span class="text-danger">*</span></label>
                     <input type="text" name="customer_name" required maxlength="255"
                            value="{{ old('customer_name', $customer?->name) }}"
@@ -166,19 +167,11 @@
                            class="ta-input !py-2 !text-sm font-medium @error('customer_name') !border-danger @enderror">
                     @error('customer_name')<p class="mt-1 text-xs text-danger">{{ $message }}</p>@enderror
                 </div>
-
-                <div class="sm:col-span-3">
-                    <label class="text-xs font-semibold text-muted block mb-1">Postal / ZIP Code <span class="text-danger">*</span></label>
-                    <input type="text" name="customer_zip_code" required maxlength="20"
-                           value="{{ old('customer_zip_code', $customer?->zip_code) }}"
-                           x-ref="customerZip"
-                           placeholder="Postal code"
-                           class="ta-input !py-2 !text-sm font-medium @error('customer_zip_code') !border-danger @enderror">
-                    @error('customer_zip_code')<p class="mt-1 text-xs text-danger">{{ $message }}</p>@enderror
-                </div>
             </div>
 
-            {{-- Row 2: Address & City --}}
+            {{-- Row 2: Address & Postal Code. The postal code sits beside the
+                 address rather than in its own row, since together they are the
+                 delivery location and the postal code drives the ZIP reports. --}}
             <div class="grid grid-cols-1 gap-3.5 sm:grid-cols-12">
                 <div class="sm:col-span-8">
                     <label class="text-xs font-semibold text-muted block mb-1">Delivery Address</label>
@@ -190,12 +183,13 @@
                 </div>
 
                 <div class="sm:col-span-4">
-                    <label class="text-xs font-semibold text-muted block mb-1">City</label>
-                    <input type="text" name="customer_city" maxlength="120"
-                           value="{{ old('customer_city', $customer?->city) }}"
-                           x-ref="customerCity"
-                           placeholder="City"
-                           class="ta-input !py-2 !text-sm">
+                    <label class="text-xs font-semibold text-muted block mb-1">Postal / ZIP Code <span class="text-danger">*</span></label>
+                    <input type="text" name="customer_zip_code" required maxlength="20"
+                           value="{{ old('customer_zip_code', $customer?->zip_code) }}"
+                           x-ref="customerZip"
+                           placeholder="Postal code"
+                           class="ta-input !py-2 !text-sm font-medium @error('customer_zip_code') !border-danger @enderror">
+                    @error('customer_zip_code')<p class="mt-1 text-xs text-danger">{{ $message }}</p>@enderror
                 </div>
             </div>
 
@@ -282,9 +276,11 @@
                         <select name="order_status" class="ta-input !py-2 !text-sm font-semibold">
                             <option value="new" @selected(!in_array(old('order_status', $order->order_status?->value ?? 'new'), ['delivered', 'cancelled', 'returned']))>Pending</option>
                             <option value="delivered" @selected(old('order_status', $order->order_status?->value ?? 'new') === 'delivered')>Delivered</option>
-                            @if ($isEdit)
+                            {{-- Cancelling is a permission of its own: Admins always have
+                                 it, Managers only when an Admin grants it in Settings. --}}
+                            @can('cancel-orders')
                                 <option value="cancelled" @selected(in_array(old('order_status', $order->order_status?->value ?? 'new'), ['cancelled', 'returned']))>Cancelled</option>
-                            @endif
+                            @endcan
                         </select>
                     </div>
 
@@ -867,7 +863,6 @@
                 if (this.$refs.customerName) this.$refs.customerName.value = '';
                 if (this.$refs.customerEmail) this.$refs.customerEmail.value = '';
                 if (this.$refs.customerAddress) this.$refs.customerAddress.value = '';
-                if (this.$refs.customerCity) this.$refs.customerCity.value = '';
                 if (this.$refs.customerState) this.$refs.customerState.value = '';
                 if (this.$refs.customerZip) this.$refs.customerZip.value = '';
             },
@@ -905,9 +900,6 @@
                         }
                         if (this.$refs.customerAddress && (!this.$refs.customerAddress.value || this.$refs.customerAddress.value === data.customer.address)) {
                             this.$refs.customerAddress.value = data.customer.address || '';
-                        }
-                        if (this.$refs.customerCity && (!this.$refs.customerCity.value || this.$refs.customerCity.value === data.customer.city)) {
-                            this.$refs.customerCity.value = data.customer.city || '';
                         }
                         if (this.$refs.customerState && (!this.$refs.customerState.value || this.$refs.customerState.value === data.customer.state)) {
                             this.$refs.customerState.value = data.customer.state || '';

@@ -106,6 +106,13 @@ class StoreOrderRequest extends FormRequest
     public function withValidator(Validator $validator): void
     {
         $validator->after(function (Validator $validator) {
+            // Setting an order to Cancelled needs the cancel permission, not just
+            // the edit permission. Hiding the option in the form is not enough.
+            if ($this->input('order_status') === OrderStatus::Cancelled->value
+                && $this->user()?->cannot('cancel-orders')) {
+                $validator->errors()->add('order_status', 'You do not have permission to cancel orders.');
+            }
+
             $rows = (array) $this->input('items', []);
 
             // Every row needs either a catalogue product or a typed-in name.
