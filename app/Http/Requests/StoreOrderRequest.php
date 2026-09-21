@@ -71,6 +71,7 @@ class StoreOrderRequest extends FormRequest
             'discount'                => ['nullable', 'numeric', 'min:0'],
             'delivery_charge'         => ['nullable', 'numeric', 'min:0'],
             'tax'                     => ['nullable', 'numeric', 'min:0'],
+            'order_source'            => ['required', 'string', 'max:100'],
             'notes'                   => ['nullable', 'string', 'max:2000'],
         ];
     }
@@ -100,6 +101,7 @@ class StoreOrderRequest extends FormRequest
             'items.*.unit_price.min'      => 'Unit price cannot be negative.',
             'sales_person_id.required'    => 'A Sales Person must be assigned to the order.',
             'sales_person_id.exists'      => 'The selected Sales Person must be an active sales representative.',
+            'order_source.required'       => 'The Source of Order is required.',
             'requested_delivery_date.after_or_equal' => 'The requested delivery date must be today or later.',
         ];
     }

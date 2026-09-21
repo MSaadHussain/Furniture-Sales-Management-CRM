@@ -39,6 +39,7 @@ class OrderService
             $order = new Order([
                 'customer_id'             => $customer->id,
                 'sales_person_id'         => $data['sales_person_id'] ?? null,
+                'order_source'            => ! empty($data['order_source']) ? trim($data['order_source']) : null,
                 'requested_delivery_date' => $data['requested_delivery_date'],
                 'order_status'            => $data['order_status'] ?? OrderStatus::New->value,
                 'payment_method'          => $data['payment_method'] ?? null,
@@ -102,6 +103,7 @@ class OrderService
             $order->fill([
                 'customer_id'             => $customer->id,
                 'sales_person_id'         => $data['sales_person_id'] ?? null,
+                'order_source'            => ! empty($data['order_source']) ? trim($data['order_source']) : null,
                 'requested_delivery_date' => $data['requested_delivery_date'],
                 'payment_method'          => $data['payment_method'] ?? null,
                 'zip_code'                => $customer->zip_code,

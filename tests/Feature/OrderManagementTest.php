@@ -54,6 +54,7 @@ class OrderManagementTest extends TestCase
             'delivery_charge'         => 2500,
             'discount'                => 0,
             'tax'                     => 0,
+            'order_source'            => 'Showroom Walk-in',
             'items' => [
                 ['product_id' => $this->sofa->id,  'colour_id' => $this->grey->id, 'quantity' => 1, 'unit_price' => 85000, 'discount' => 0],
                 ['product_id' => $this->chair->id, 'colour_id' => $this->grey->id, 'quantity' => 6, 'unit_price' => 8000,  'discount' => 0],
@@ -384,5 +385,40 @@ class OrderManagementTest extends TestCase
             ->get(route('orders.export', ['format' => 'csv']))
             ->assertOk()
             ->assertHeader('content-type', 'text/csv; charset=UTF-8');
+    }
+
+    public function test_order_can_be_created_with_custom_source(): void
+    {
+        $response = $this->actingAs($this->admin)->post(
+            route('orders.store'),
+            $this->payload(['order_source' => 'Interior Designer Expo 2026'])
+        );
+
+        $order = Order::firstOrFail();
+        $response->assertRedirect(route('orders.show', $order));
+        $this->assertSame('Interior Designer Expo 2026', $order->order_source);
+
+        // Check show page displays the custom source
+        $this->actingAs($this->admin)
+            ->get(route('orders.show', $order))
+            ->assertOk()
+            ->assertSee('Interior Designer Expo 2026');
+
+        // Check create page now includes this saved custom source in the options
+        $this->actingAs($this->admin)
+            ->get(route('orders.create'))
+            ->assertOk()
+            ->assertSee('Interior Designer Expo 2026');
+    }
+
+    public function test_order_source_is_required(): void
+    {
+        $response = $this->actingAs($this->admin)->post(
+            route('orders.store'),
+            $this->payload(['order_source' => ''])
+        );
+
+        $response->assertSessionHasErrors('order_source');
+        $this->assertSame(0, Order::count());
     }
 }

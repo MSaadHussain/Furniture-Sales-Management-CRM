@@ -39,6 +39,10 @@
 
     $selectedCustomer = old('customer_id', $customer?->id);
     $selectedSalesPerson = (int) old('sales_person_id', $order->sales_person_id ?: (auth()->user()?->isSalesPerson() ? auth()->id() : 0));
+    $orderSources = isset($orderSources) ? collect($orderSources)->filter()->values() : collect();
+    $currentSource = (string) old('order_source', $order->order_source ?? '');
+    $hasSavedSources = $orderSources->isNotEmpty();
+    $isCustomSource = $hasSavedSources ? ($currentSource !== '' && !$orderSources->contains($currentSource)) : true;
 @endphp
 
 <form method="POST"
@@ -227,10 +231,10 @@
                 </div>
             </div>
 
-            {{-- Row 3: Sales Person, Order Date, Target Delivery Date --}}
+            {{-- Row 3: Sales Person, Source of Order, Order Date, Target Delivery Date --}}
             <div class="grid grid-cols-1 gap-3.5 sm:grid-cols-12 pt-1">
                 {{-- Sales Person --}}
-                <div class="sm:col-span-4">
+                <div class="sm:col-span-3">
                     <label class="text-base font-semibold text-slate-500 dark:text-white block mb-1">Sales Person <span class="text-danger">*</span></label>
                     <select name="sales_person_id" required class="ta-input !py-2 font-semibold @error('sales_person_id') !border-danger @enderror">
                         <option value="">-- Select Sales Person --</option>
@@ -244,8 +248,75 @@
                     @error('sales_person_id')<p class="mt-1 text-sm text-danger">{{ $message }}</p>@enderror
                 </div>
 
+                {{-- Source of Order --}}
+                <div class="sm:col-span-3"
+                     x-data="{
+                         hasOptions: {{ $hasSavedSources ? 'true' : 'false' }},
+                         isCustom: {{ ($isCustomSource || !$hasSavedSources) ? 'true' : 'false' }},
+                         selectedSource: @js($isCustomSource ? '__custom__' : $currentSource),
+                         customText: @js($currentSource),
+                         syncSource() {
+                             if (this.selectedSource === '__custom__') {
+                                 this.isCustom = true;
+                                 this.$nextTick(() => { this.$refs.customSourceInput?.focus(); });
+                             } else {
+                                 this.isCustom = false;
+                                 this.customText = this.selectedSource;
+                             }
+                         }
+                     }">
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="text-base font-semibold text-slate-500 dark:text-white block">Source of Order <span class="text-danger">*</span></label>
+                        <template x-if="hasOptions">
+                            <div>
+                                <button type="button"
+                                        x-show="!isCustom"
+                                        x-on:click="isCustom = true; selectedSource = '__custom__'; $nextTick(() => { $refs.customSourceInput?.focus(); })"
+                                        class="text-[11px] font-semibold text-brand hover:underline">
+                                    + Custom
+                                </button>
+                                <button type="button"
+                                        x-show="isCustom"
+                                        x-on:click="isCustom = false; selectedSource = ''; customText = ''"
+                                        class="text-[11px] font-semibold text-muted hover:text-brand"
+                                        style="display: none;">
+                                    &larr; Saved list
+                                </button>
+                            </div>
+                        </template>
+                    </div>
+
+                    {{-- Dropdown Mode (Only if saved sources exist) --}}
+                    <div x-show="hasOptions && !isCustom">
+                        <select x-model="selectedSource"
+                                x-on:change="syncSource()"
+                                :required="!isCustom && hasOptions"
+                                :name="(!isCustom && hasOptions) ? 'order_source' : ''"
+                                class="ta-input !py-2 font-semibold @error('order_source') !border-danger @enderror">
+                            <option value="">-- Select Source --</option>
+                            @foreach ($orderSources as $src)
+                                <option value="{{ $src }}" @selected($currentSource === $src)>{{ $src }}</option>
+                            @endforeach
+                            <option value="__custom__" class="font-bold text-brand">+ Add Custom Source...</option>
+                        </select>
+                    </div>
+
+                    {{-- Custom Text Mode --}}
+                    <div x-show="!hasOptions || isCustom" :style="(!hasOptions || isCustom) ? '' : 'display: none;'">
+                        <input type="text"
+                               x-ref="customSourceInput"
+                               x-model="customText"
+                               :required="!hasOptions || isCustom"
+                               :name="(!hasOptions || isCustom) ? 'order_source' : ''"
+                               placeholder="Enter source (e.g. Walk-in, Instagram, Call...)"
+                               maxlength="100"
+                               class="ta-input !py-2 font-semibold @error('order_source') !border-danger @enderror">
+                    </div>
+                    @error('order_source')<p class="mt-1 text-sm text-danger">{{ $message }}</p>@enderror
+                </div>
+
                 {{-- Order Date --}}
-                <div class="sm:col-span-4">
+                <div class="sm:col-span-3">
                     <label class="text-base font-semibold text-slate-500 dark:text-white block mb-1">Order Date <span class="text-danger">*</span></label>
                     <input type="text" name="order_created_at" required
                            x-datepicker
@@ -255,7 +326,7 @@
                 </div>
 
                 {{-- Delivery Date --}}
-                <div class="sm:col-span-4">
+                <div class="sm:col-span-3">
                     <div class="flex items-center justify-between mb-1">
                         <label class="text-xs font-semibold text-slate-500 dark:text-white block">Delivery Date <span class="text-danger">*</span></label>
                         <div class="flex items-center gap-1">

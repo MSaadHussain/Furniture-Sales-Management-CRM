@@ -19,7 +19,7 @@ class Order extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'order_number', 'customer_id', 'sales_person_id',
+        'order_number', 'customer_id', 'sales_person_id', 'order_source',
         'order_created_at', 'requested_delivery_date', 'actual_delivery_date',
         'subtotal', 'discount', 'delivery_charge', 'tax', 'grand_total',
         'payment_status', 'payment_method', 'amount_paid', 'balance_due',
@@ -131,6 +131,7 @@ class Order extends Model
         return $query->where(function (Builder $q) use ($term, $cleanTerm) {
             $q->where('order_number', 'like', "%{$term}%")
               ->orWhere('order_number', 'like', "%{$cleanTerm}%")
+              ->orWhere('order_source', 'like', "%{$term}%")
               ->orWhere('zip_code', 'like', "%{$term}%")
               ->orWhereHas('customer', function (Builder $c) use ($term) {
                   $c->where('name', 'like', "%{$term}%")

@@ -501,13 +501,24 @@ class OrderController extends Controller implements HasMiddleware
     /** Shared select options for the create/edit order form. */
     private function formData(): array
     {
+        $orderSources = Order::query()
+            ->whereNotNull('order_source')
+            ->where('order_source', '!=', '')
+            ->distinct()
+            ->orderBy('order_source')
+            ->pluck('order_source')
+            ->map(fn ($s) => trim((string) $s))
+            ->filter()
+            ->values();
+
         return [
-            'products'     => Product::active()->with(['category', 'colours'])->orderBy('name')->get(),
-            'colours'      => Colour::active()->orderBy('sort_order')->orderBy('name')->get(),
-            'salesPersons' => User::selectableSalesPersons()->get(['id', 'name', 'role']),
-            'statuses'     => OrderStatus::cases(),
+            'products'        => Product::active()->with(['category', 'colours'])->orderBy('name')->get(),
+            'colours'         => Colour::active()->orderBy('sort_order')->orderBy('name')->get(),
+            'salesPersons'    => User::selectableSalesPersons()->get(['id', 'name', 'role']),
+            'statuses'        => OrderStatus::cases(),
             'paymentStatuses' => PaymentStatus::cases(),
             'paymentMethods'  => PaymentMethod::cases(),
+            'orderSources'    => $orderSources,
         ];
     }
 }
