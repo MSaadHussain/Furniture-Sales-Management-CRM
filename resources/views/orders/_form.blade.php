@@ -239,7 +239,7 @@
                     <select name="sales_person_id" required class="ta-input !py-2 font-semibold @error('sales_person_id') !border-danger @enderror">
                         <option value="">-- Select Sales Person --</option>
                         @foreach ($salesPersons as $person)
-                            <option value="{{ $person->id }}"
+                            <option value="{{ $person->id }}" class="font-bold"
                                 @selected($selectedSalesPerson === $person->id)>
                                 {{ $person->name }}
                             </option>

@@ -17,5 +17,11 @@ Schedule::command('queue:work --stop-when-empty --max-time=55')
     ->everyMinute()
     ->withoutOverlapping();
 
+// Mirrors changed orders, customers and products into the Google Sheet. Exits
+// immediately and makes no HTTP call when nothing has changed.
+Schedule::command('sheets:sync')
+    ->everyMinute()
+    ->withoutOverlapping();
+
 // Housekeeping: trim expired framework caches and old session rows.
 Schedule::command('auth:clear-resets')->daily();

@@ -77,6 +77,10 @@ Enforcement is server-side on every route: controllers declare
 | settings             | `..._000010_create_settings_table`                     | key/value JSON |
 | user_sessions        | `..._000011_...`                                       | time-spent tracking |
 | user_activity_logs   | `..._000012_...`                                       | page/action tracking |
+| sheet_sync_deletions | `2026_09_21_000002_add_google_sheet_sync_to_tables`     | ids awaiting removal from the Google Sheet |
+
+`orders`, `customers` and `products` each carry a nullable `sheet_synced_at`:
+NULL means the row still has to be written to the Google Sheet.
 
 ### The three order dates (non-negotiable)
 
@@ -131,6 +135,8 @@ delivery board and overdue counts.
 | AuditService           | Audit trail with before/after diffing and redaction of secrets |
 | ActivityTrackingService| Session time and page activity |
 | Export\TabularExport   | Streaming CSV / XLSX |
+| Sheets\SheetSyncService| Mirrors orders/customers/products into a Google Sheet, upserting on the CRM id |
+| Sheets\SheetsWebAppClient | Signed (HMAC-SHA256) calls to the Apps Script Web App that owns the spreadsheet |
 
 `app/Support/Money.php` formats every amount from the currency settings. There is **no
 built-in default** — amounts render as bare numbers until an Admin picks a symbol.
@@ -225,9 +231,31 @@ figures are display only. Data reaches Alpine via `Js::from()`.
 | CatalogueTest             | Customers, products, categories, colours |
 | UserManagementTest        | Registration, hashing, active-seller rule, last-admin guard |
 | ProfileTest, Auth/*       | Self-service profile and Breeze auth |
+| GoogleSheetSyncTest       | Dirty tracking, backfill, upsert payloads, deletions, request signing, retry on failure |
 
 The suite runs against **MySQL** (`crmapp_test`), not SQLite, because the reports use
 `DATE_FORMAT`, `FIELD`, `DATEDIFF` and `GREATEST`. See `phpunit.xml`.
+
+---
+
+## Google Sheets mirror
+
+Orders, customers and products are mirrored into a Google Sheet. Observers only
+flag a row (`sheet_synced_at` back to NULL); the `sheets:sync` command drains
+those flags on the existing cron tick, so **no HTTP call ever runs inline with
+saving an order**. A failed push leaves the row flagged and the next tick
+retries. Column A of each tab is the CRM id, so edits upsert instead of
+appending. Full setup, including the Apps Script to paste, is in
+`GOOGLE_SHEETS.md` and `google-apps-script/Code.gs`.
+
+```bash
+php artisan sheets:status      # configured? connected? how much is pending?
+php artisan sheets:sync        # what cron runs
+php artisan sheets:sync --all  # rewrite the whole sheet
+```
+
+Off by default: nothing is sent until `GOOGLE_SHEETS_ENABLED`,
+`GOOGLE_SHEETS_SYNC_URL` and `GOOGLE_SHEETS_SYNC_SECRET` are all set.
 
 ---
 

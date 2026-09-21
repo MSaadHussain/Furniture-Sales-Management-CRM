@@ -13,10 +13,10 @@ return [
     'enabled' => env('GOOGLE_SHEETS_ENABLED', false),
 
     // Apps Script Web App deployment URL (…/exec).
-    'url' => env('GOOGLE_SHEETS_WEBAPP_URL'),
+    'url' => env('GOOGLE_SHEETS_SYNC_URL'),
 
     // Shared secret, identical to SHARED_SECRET inside the Apps Script.
-    'secret' => env('GOOGLE_SHEETS_SECRET'),
+    'secret' => env('GOOGLE_SHEETS_SYNC_SECRET'),
 
     // Rows pushed per HTTP call. Apps Script stops at 6 minutes per request,
     // so batches stay small enough to finish well inside that.

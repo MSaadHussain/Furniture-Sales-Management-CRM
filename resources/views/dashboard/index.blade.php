@@ -265,14 +265,11 @@
         </div>
     </div>
 
-    {{-- ==================== Row 3: Sales Trend & 7-Day Schedule ========================= --}}
-    <x-card padding="p-4 sm:p-5" title="Sales trend" :subtitle="$range['label'] . ' · by ' . $trend['granularity']">
-        <div class="h-56">
-            <canvas id="salesTrendChart"></canvas>
-        </div>
-
-        {{-- Integrated Next 7 Days Delivery Outlook strip --}}
-        <div class="mt-4 pt-3 border-t border-line/60 dark:border-strokedark">
+    {{-- ==================== Row 3: 7-Day Delivery Schedule =============================
+         The trend chart used to live in this card. It now sits at the foot of the
+         page; the delivery outlook stays up here because it is worked from daily. --}}
+    <x-card padding="p-4 sm:p-5">
+        <div>
             <div class="flex items-center justify-between mb-2">
                 <span class="text-xs font-bold uppercase tracking-wider text-muted">Next 7 Days Delivery Schedule</span>
                 <a href="{{ route('deliveries.index') }}" class="text-[11px] font-semibold text-brand hover:underline">Delivery Hub &rarr;</a>
@@ -290,7 +287,7 @@
         </div>
     </x-card>
 
-    {{-- ================= Row 3: High-Density Tri-Grid (ZIPs, Products/Colours, Sales Team) ================= --}}
+    {{-- ================= Row 4: High-Density Tri-Grid (ZIPs, Products/Colours, Sales Team) ================= --}}
     <div class="grid grid-cols-1 gap-4 lg:grid-cols-3 items-start">
 
         {{-- 1. Top ZIP / Postal Areas --}}
@@ -400,6 +397,14 @@
             </div>
         </x-card>
     </div>
+
+    {{-- ==================== Row 5: Sales Trend ==========================================
+         Charts sit below the figures: the numbers are what the page is read for. --}}
+    <x-card padding="p-4 sm:p-5" title="Sales trend" :subtitle="$range['label'] . ' · by ' . $trend['granularity']">
+        <div class="h-56">
+            <canvas id="salesTrendChart"></canvas>
+        </div>
+    </x-card>
 </div>
 @endsection
 

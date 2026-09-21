@@ -20,10 +20,6 @@
                      :value="\App\Support\Money::compact($totals->outstanding ?? 0)" />
     </div>
 
-    <x-card title="Revenue over time" :subtitle="$range['label']">
-        <div class="h-64"><canvas id="reportTrend"></canvas></div>
-    </x-card>
-
     {{-- Filters (requirements 26.1) --}}
     <x-card padding="p-4">
         <form method="GET" class="grid grid-cols-1 gap-3 md:grid-cols-3 xl:grid-cols-6">
@@ -36,7 +32,8 @@
                 <select name="sales_person_id" class="ta-input">
                     <option value="">All</option>
                     @foreach ($salesPersons as $person)
-                        <option value="{{ $person->id }}" @selected((int) ($filters['sales_person_id'] ?? 0) === $person->id)>
+                        <option value="{{ $person->id }}" class="font-bold"
+                                @selected((int) ($filters['sales_person_id'] ?? 0) === $person->id)>
                             {{ $person->name }}
                         </option>
                     @endforeach
@@ -119,6 +116,11 @@
             </div>
             <div class="border-t border-line px-5 py-4 dark:border-strokedark">{{ $orders->links() }}</div>
         @endif
+    </x-card>
+
+    {{-- Charts sit below the figures: the numbers are what the page is read for. --}}
+    <x-card title="Revenue over time" :subtitle="$range['label']">
+        <div class="h-64"><canvas id="reportTrend"></canvas></div>
     </x-card>
 </div>
 @endsection

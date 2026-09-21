@@ -12,16 +12,6 @@
     @include('reports._nav')
     <x-date-range :range="$range" :presets="$presets" />
 
-    <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <x-card title="Top products by revenue" :subtitle="$range['label']">
-            <div class="h-72"><canvas id="productRevenue"></canvas></div>
-        </x-card>
-
-        <x-card title="Category performance" subtitle="Revenue by product category">
-            <div class="h-72"><canvas id="categoryRevenue"></canvas></div>
-        </x-card>
-    </div>
-
     <x-card padding="p-0" title="Product performance" subtitle="Grouped on the item name recorded at order time">
         @if ($byQuantity->isEmpty())
             <x-empty-state icon="fa-chair" title="No items sold in this period" />
@@ -116,6 +106,17 @@
                     </table>
                 </div>
             @endif
+        </x-card>
+    </div>
+
+    {{-- Charts sit below the figures: the numbers are what the page is read for. --}}
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <x-card title="Top products by revenue" :subtitle="$range['label']">
+            <div class="h-72"><canvas id="productRevenue"></canvas></div>
+        </x-card>
+
+        <x-card title="Category performance" subtitle="Revenue by product category">
+            <div class="h-72"><canvas id="categoryRevenue"></canvas></div>
         </x-card>
     </div>
 </div>

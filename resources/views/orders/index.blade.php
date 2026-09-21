@@ -96,7 +96,8 @@
                     <select name="sales_person_id" class="ta-input !py-1.5 !text-xs w-full">
                         <option value="">Seller: All</option>
                         @foreach ($salesPersons as $person)
-                            <option value="{{ $person->id }}" @selected((int) ($filters['sales_person_id'] ?? 0) === $person->id)>
+                            <option value="{{ $person->id }}" class="font-bold"
+                                    @selected((int) ($filters['sales_person_id'] ?? 0) === $person->id)>
                                 {{ $person->name }}
                             </option>
                         @endforeach

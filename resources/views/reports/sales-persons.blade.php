@@ -87,14 +87,7 @@
         </div>
     </div>
 
-    {{-- ============================ Row 2: Visual Comparison Chart ============================ --}}
-    <x-card padding="p-4 sm:p-5" title="Sales Team Comparison" :subtitle="'Revenue & order volume comparison · ' . $range['label']">
-        <div class="h-60">
-            <canvas id="salesPersonCompareChart"></canvas>
-        </div>
-    </x-card>
-
-    {{-- ============================ Row 3: Comparative Leaderboard Table ============================ --}}
+    {{-- ============================ Row 2: Comparative Leaderboard Table ============================ --}}
     <x-card padding="p-0" title="Sales Representative Leaderboard" :subtitle="'Full roster breakdown · ' . $range['label']">
         @if ($rows->isEmpty())
             <x-empty-state icon="fa-user-tie" title="No sales persons registered"
@@ -308,6 +301,14 @@
                 do not drag a seller down. Ratio reads as delivered orders per cancelled order.
             </p>
         @endif
+    </x-card>
+
+    {{-- ==== Row 3: Visual Comparison Chart ====
+         Charts sit below the figures: the numbers are what the page is read for. --}}
+    <x-card padding="p-4 sm:p-5" title="Sales Team Comparison" :subtitle="'Revenue & order volume comparison · ' . $range['label']">
+        <div class="h-60">
+            <canvas id="salesPersonCompareChart"></canvas>
+        </div>
     </x-card>
 
     <p class="text-[11px] text-muted">

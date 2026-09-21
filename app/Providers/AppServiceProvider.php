@@ -6,7 +6,12 @@ use App\Enums\UserRole;
 use App\Models\Customer;
 use App\Models\Order;
 use App\Models\Product;
+use App\Models\OrderItem;
 use App\Models\User;
+use App\Observers\CustomerObserver;
+use App\Observers\OrderItemObserver;
+use App\Observers\OrderObserver;
+use App\Observers\ProductObserver;
 use App\Policies\CustomerPolicy;
 use App\Policies\OrderPolicy;
 use App\Policies\ProductPolicy;
@@ -30,6 +35,13 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Product::class, ProductPolicy::class);
 
         $this->defineGates();
+
+        // Keep the Google Sheet mirror aware of what has changed. The observers
+        // only flag rows; `sheets:sync` does the talking on the cron tick.
+        Order::observe(OrderObserver::class);
+        OrderItem::observe(OrderItemObserver::class);
+        Customer::observe(CustomerObserver::class);
+        Product::observe(ProductObserver::class);
 
         // The header shows how many deliveries are scheduled for tomorrow. Cached
         // briefly so it costs one indexed count per minute, not one per page.
