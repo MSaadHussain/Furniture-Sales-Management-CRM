@@ -40,6 +40,9 @@ class OrderService
                 'customer_id'             => $customer->id,
                 'sales_person_id'         => $data['sales_person_id'] ?? null,
                 'order_source'            => ! empty($data['order_source']) ? trim($data['order_source']) : null,
+                'number_of_orders'        => ($data['number_of_orders'] ?? '') !== ''
+                    ? (int) $data['number_of_orders']
+                    : null,
                 'requested_delivery_date' => $data['requested_delivery_date'],
                 'order_status'            => $data['order_status'] ?? OrderStatus::New->value,
                 'payment_method'          => $data['payment_method'] ?? null,
@@ -104,6 +107,9 @@ class OrderService
                 'customer_id'             => $customer->id,
                 'sales_person_id'         => $data['sales_person_id'] ?? null,
                 'order_source'            => ! empty($data['order_source']) ? trim($data['order_source']) : null,
+                'number_of_orders'        => ($data['number_of_orders'] ?? '') !== ''
+                    ? (int) $data['number_of_orders']
+                    : null,
                 'requested_delivery_date' => $data['requested_delivery_date'],
                 'payment_method'          => $data['payment_method'] ?? null,
                 'zip_code'                => $customer->zip_code,

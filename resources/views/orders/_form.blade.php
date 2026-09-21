@@ -231,7 +231,7 @@
                 </div>
             </div>
 
-            {{-- Row 3: Sales Person, Source of Order, Order Date, Target Delivery Date --}}
+            {{-- Row 3: Sales Person, Source of Order, No. of Orders, Order Date, Target Delivery Date --}}
             <div class="grid grid-cols-1 gap-3.5 sm:grid-cols-12 pt-1">
                 {{-- Sales Person --}}
                 <div class="sm:col-span-3">
@@ -315,8 +315,19 @@
                     @error('order_source')<p class="mt-1 text-sm text-danger">{{ $message }}</p>@enderror
                 </div>
 
+                {{-- No. of Orders: a plain reference number the user types in.
+                     It is not a quantity and feeds nothing else. --}}
+                <div class="sm:col-span-2">
+                    <label class="text-base font-semibold text-slate-500 dark:text-white block mb-1">No. of Orders</label>
+                    <input type="number" name="number_of_orders" min="0" max="999999" step="1"
+                           inputmode="numeric" placeholder="e.g. 1"
+                           value="{{ old('number_of_orders', $order->number_of_orders) }}"
+                           class="ta-input !py-2 font-semibold @error('number_of_orders') !border-danger @enderror">
+                    @error('number_of_orders')<p class="mt-1 text-sm text-danger">{{ $message }}</p>@enderror
+                </div>
+
                 {{-- Order Date --}}
-                <div class="sm:col-span-3">
+                <div class="sm:col-span-2">
                     <label class="text-base font-semibold text-slate-500 dark:text-white block mb-1">Order Date <span class="text-danger">*</span></label>
                     <input type="text" name="order_created_at" required
                            x-datepicker
@@ -326,8 +337,8 @@
                 </div>
 
                 {{-- Delivery Date --}}
-                <div class="sm:col-span-3">
-                    <div class="flex items-center justify-between mb-1">
+                <div class="sm:col-span-2">
+                    <div class="flex flex-wrap items-center justify-between gap-y-1 mb-1">
                         <label class="text-xs font-semibold text-slate-500 dark:text-white block">Delivery Date <span class="text-danger">*</span></label>
                         <div class="flex items-center gap-1">
                             <button type="button" x-on:click="setDeliveryDays(1)" class="rounded bg-surface px-1.5 py-0.5 text-[11px] font-semibold text-brand hover:bg-brand/10 dark:bg-boxdark2">Tomorrow</button>

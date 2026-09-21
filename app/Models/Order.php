@@ -19,7 +19,7 @@ class Order extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'order_number', 'customer_id', 'sales_person_id', 'order_source',
+        'order_number', 'customer_id', 'sales_person_id', 'order_source', 'number_of_orders',
         'order_created_at', 'requested_delivery_date', 'actual_delivery_date',
         'subtotal', 'discount', 'delivery_charge', 'tax', 'grand_total',
         'payment_status', 'payment_method', 'amount_paid', 'balance_due',
@@ -30,6 +30,7 @@ class Order extends Model
     protected function casts(): array
     {
         return [
+            'number_of_orders'        => 'integer',
             'order_created_at'        => 'datetime',
             'requested_delivery_date' => 'date',
             'actual_delivery_date'    => 'date',
@@ -200,6 +201,24 @@ class Order extends Model
         return $names->implode(', ') . ($extra > 0 ? " +{$extra} more" : '');
     }
 
+    /**
+     * Delivery address for the order: the customer's address, falling back to
+     * the ZIP snapshotted on the order itself. Empty string when nothing known.
+     */
+    public function deliveryAddress(): string
+    {
+        $customer = $this->relationLoaded('customer') ? $this->customer : $this->customer()->first();
+
+        $parts = array_filter([
+            $customer?->address,
+            $customer?->city,
+            $customer?->state,
+            $customer?->zip_code ?: $this->zip_code,
+        ]);
+
+        return ! empty($parts) ? implode(', ', $parts) : (string) ($this->zip_code ?: '');
+    }
+
     public function totalQuantity(): int
     {
         $items = $this->relationLoaded('items') ? $this->items : $this->items()->get();
@@ -218,13 +237,7 @@ class Order extends Model
         $name  = $customer?->name ?? 'N/A';
         $phone = $customer?->phone ?? 'N/A';
 
-        $addrParts = array_filter([
-            $customer?->address,
-            $customer?->city,
-            $customer?->state,
-            $customer?->zip_code ?: $this->zip_code,
-        ]);
-        $address = ! empty($addrParts) ? implode(', ', $addrParts) : ($this->zip_code ?: 'N/A');
+        $address = $this->deliveryAddress() ?: 'N/A';
 
         $productList = $items->map(function (OrderItem $item) {
             $col = $item->item_colour ? " ({$item->item_colour})" : '';

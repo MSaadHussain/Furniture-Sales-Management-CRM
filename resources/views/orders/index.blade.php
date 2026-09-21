@@ -191,6 +191,7 @@
                                            sub="created" sub-label="Date created" />
                             <x-sort-header column="customer" label="Customer" class="py-3 px-3" default="asc" />
                             <th class="ta-th py-3 px-3">Items</th>
+                            <th class="ta-th py-3 px-3 text-center">No. of Orders</th>
                             <x-sort-header column="sales_person" label="Sales Person" class="py-3 px-3" default="asc" />
                             <x-sort-header column="requested" label="Delivery" class="py-3 px-3" />
                             <x-sort-header column="order_status" label="Order Status" class="py-3 px-3" default="asc" />
@@ -209,19 +210,61 @@
                                     <p class="text-xs text-muted dark:text-gray-400">{{ $order->order_created_at?->format('d M Y') }}</p>
                                 </td>
 
-                                {{-- Customer name only. Phone and ZIP live on the
-                                     order detail page to keep this list scannable. --}}
+                                {{-- Customer name and delivery address. The address
+                                     carries its own copy button so it can be pasted
+                                     straight into a delivery note or map. --}}
                                 <td class="py-2.5 px-3">
                                     <p class="font-bold text-ink dark:text-white truncate max-w-[180px]" title="{{ $order->customer?->name }}">
                                         {{ $order->customer?->name ?? 'Unknown' }}
                                     </p>
+                                    @php($address = $order->deliveryAddress())
+                                    @if ($address !== '')
+                                        <div class="mt-0.5 flex items-start gap-1" x-data="{ copied: false, text: @js($address) }">
+                                            <span class="text-xs text-muted dark:text-gray-400 break-words max-w-[180px]" title="{{ $address }}">{{ $address }}</span>
+                                            <button type="button"
+                                                    data-copy-btn="true"
+                                                    x-on:click="window.copyOrderToClipboard(text); copied = true; setTimeout(() => copied = false, 2000)"
+                                                    class="shrink-0 inline-flex h-5 w-5 items-center justify-center rounded text-muted dark:text-gray-400 transition hover:bg-brand/10 hover:text-brand"
+                                                    :class="{ '!bg-emerald-500/10 !text-emerald-600': copied }"
+                                                    :title="copied ? 'Address copied!' : 'Copy address'">
+                                                <i class="fa-solid text-[10px]" :class="copied ? 'fa-check' : 'fa-copy'"></i>
+                                            </button>
+                                        </div>
+                                    @else
+                                        <p class="mt-0.5 text-xs text-muted dark:text-gray-400">No address</p>
+                                    @endif
                                 </td>
 
-                                {{-- Items Summary --}}
-                                <td class="py-2.5 px-3 max-w-[200px]">
-                                    <p class="truncate font-medium text-ink dark:text-white" title="{{ $order->itemSummary(5) }}">
-                                        {{ $order->itemSummary(2) }}
-                                    </p>
+                                {{-- Items. A single item reads as one line; two or more
+                                     are listed in full so no name is cut short. --}}
+                                <td class="py-2.5 px-3 max-w-[240px]">
+                                    @if ($order->items->count() > 1)
+                                        <ul class="list-disc pl-4 space-y-0.5 font-medium text-ink dark:text-white">
+                                            @foreach ($order->items as $item)
+                                                <li class="break-words">
+                                                    {{ $item->item_name_snapshot }}@if ($item->item_colour) <span class="text-muted dark:text-gray-400">({{ $item->item_colour }})</span>@endif
+                                                    @if ($item->quantity > 1)<span class="text-muted dark:text-gray-400">x{{ $item->quantity }}</span>@endif
+                                                </li>
+                                            @endforeach
+                                        </ul>
+                                    @else
+                                        @php($item = $order->items->first())
+                                        <p class="font-medium text-ink dark:text-white break-words">
+                                            @if ($item)
+                                                {{ $item->item_name_snapshot }}@if ($item->item_colour) <span class="text-muted dark:text-gray-400">({{ $item->item_colour }})</span>@endif
+                                                @if ($item->quantity > 1)<span class="text-muted dark:text-gray-400">x{{ $item->quantity }}</span>@endif
+                                            @else
+                                                --
+                                            @endif
+                                        </p>
+                                    @endif
+                                </td>
+
+                                {{-- No. of Orders: reference figure only, never a quantity. --}}
+                                <td class="py-2.5 px-3 text-center whitespace-nowrap">
+                                    <span class="font-semibold text-ink dark:text-white">
+                                        {{ $order->number_of_orders !== null ? $order->number_of_orders : '--' }}
+                                    </span>
                                 </td>
 
                                 {{-- Sales Person --}}
@@ -349,7 +392,32 @@
                                     {{ $order->display_number }}
                                 </a>
                                 <p class="truncate text-base font-medium text-ink dark:text-white">{{ $order->customer?->name }}</p>
-                                <p class="truncate text-sm text-muted dark:text-gray-300">{{ $order->itemSummary(2) }}</p>
+                                @php($address = $order->deliveryAddress())
+                                @if ($address !== '')
+                                    <div class="mt-0.5 flex items-start gap-1" x-data="{ copied: false, text: @js($address) }">
+                                        <span class="text-sm text-muted dark:text-gray-300 break-words">{{ $address }}</span>
+                                        <button type="button"
+                                                data-copy-btn="true"
+                                                x-on:click="window.copyOrderToClipboard(text); copied = true; setTimeout(() => copied = false, 2000)"
+                                                class="shrink-0 inline-flex h-5 w-5 items-center justify-center rounded text-muted dark:text-gray-300 transition hover:text-brand"
+                                                :class="{ '!text-emerald-600': copied }"
+                                                :title="copied ? 'Address copied!' : 'Copy address'">
+                                            <i class="fa-solid text-[10px]" :class="copied ? 'fa-check' : 'fa-copy'"></i>
+                                        </button>
+                                    </div>
+                                @endif
+                                @if ($order->items->count() > 1)
+                                    <ul class="mt-0.5 list-disc pl-4 text-sm text-muted dark:text-gray-300">
+                                        @foreach ($order->items as $item)
+                                            <li class="break-words">{{ $item->item_name_snapshot }}@if ($item->item_colour) ({{ $item->item_colour }})@endif @if ($item->quantity > 1) x{{ $item->quantity }}@endif</li>
+                                        @endforeach
+                                    </ul>
+                                @else
+                                    <p class="text-sm text-muted dark:text-gray-300 break-words">{{ $order->itemSummary(1) }}</p>
+                                @endif
+                                @if ($order->number_of_orders !== null)
+                                    <p class="text-sm text-muted dark:text-gray-300">No. of Orders: <span class="font-semibold text-ink dark:text-white">{{ $order->number_of_orders }}</span></p>
+                                @endif
                             </div>
                             <span class="text-right">
                                 <span class="block font-bold text-ink dark:text-white"><x-money :amount="$order->grand_total" /></span>

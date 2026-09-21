@@ -72,6 +72,8 @@ class StoreOrderRequest extends FormRequest
             'delivery_charge'         => ['nullable', 'numeric', 'min:0'],
             'tax'                     => ['nullable', 'numeric', 'min:0'],
             'order_source'            => ['required', 'string', 'max:100'],
+            // Free-standing informational counter (not a quantity).
+            'number_of_orders'        => ['nullable', 'integer', 'min:0', 'max:999999'],
             'notes'                   => ['nullable', 'string', 'max:2000'],
         ];
     }
