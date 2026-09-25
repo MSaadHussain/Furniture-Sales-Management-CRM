@@ -23,7 +23,12 @@
                 </span>
             </div>
             <p class="mt-2 text-2xl font-black text-brand"><x-money :amount="$totalRevenue" compact /></p>
-            <p class="text-xs text-muted mt-0.5">{{ number_format($totalOrders) }} orders closed &middot; {{ $rows->count() }} sales reps</p>
+            <p class="text-xs text-muted mt-0.5">
+                {{ number_format($totalOrders) }} orders closed &middot; {{ $rows->count() }} sales reps
+            </p>
+            <p class="text-xs text-muted mt-0.5">
+                No. of Orders total: <strong class="text-brand font-semibold">{{ number_format($totalNoOfOrders) }}</strong>
+            </p>
         </div>
 
         {{-- Top Revenue Earner --}}
@@ -100,6 +105,8 @@
                             <th class="ta-th w-16 text-center">Rank</th>
                             <th class="ta-th">Sales Person</th>
                             <th class="ta-th text-right">Orders Closed</th>
+                            {{-- The operator-entered counter on each order, summed per seller. --}}
+                            <th class="ta-th text-right">No. of Orders</th>
                             <th class="ta-th text-right">Total Revenue</th>
                             <th class="ta-th text-right">Average Order Value</th>
                             <th class="ta-th text-center">Status</th>
@@ -135,6 +142,9 @@
                                         {{ number_format($row->orders) }} order{{ $row->orders === 1 ? '' : 's' }}
                                     </span>
                                 </td>
+                                <td class="ta-td text-right font-bold text-xs text-ink dark:text-gray-300">
+                                    {{ number_format($row->no_of_orders) }}
+                                </td>
                                 <td class="ta-td text-right font-black text-sm text-brand">
                                     <x-money :amount="$row->revenue" />
                                 </td>
@@ -155,6 +165,17 @@
                             </tr>
                         @endforeach
                     </tbody>
+                    <tfoot class="border-t-2 border-line dark:border-strokedark bg-surface/50 dark:bg-boxdark2">
+                        <tr>
+                            <td class="ta-td"></td>
+                            <td class="ta-td font-bold text-ink dark:text-white">Team total</td>
+                            <td class="ta-td text-right font-bold">{{ number_format($totalOrders) }}</td>
+                            <td class="ta-td text-right font-bold">{{ number_format($totalNoOfOrders) }}</td>
+                            <td class="ta-td text-right font-black text-brand"><x-money :amount="$totalRevenue" /></td>
+                            <td class="ta-td"></td>
+                            <td class="ta-td"></td>
+                        </tr>
+                    </tfoot>
                 </table>
             </div>
         @endif

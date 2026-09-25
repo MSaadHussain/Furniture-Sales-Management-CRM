@@ -48,7 +48,7 @@ class ReportController extends Controller implements HasMiddleware
             ->withQueryString();
 
         $totals = $this->salesQuery($request, $from, $to)
-            ->selectRaw('COUNT(*) as orders, COALESCE(SUM(grand_total), 0) as revenue, COALESCE(SUM(balance_due), 0) as outstanding')
+            ->selectRaw('COUNT(*) as orders, COALESCE(SUM(number_of_orders), 0) as no_of_orders, COALESCE(SUM(grand_total), 0) as revenue, COALESCE(SUM(balance_due), 0) as outstanding')
             ->first();
 
         return view('reports.sales', $this->shared($from, $to, $label, $preset) + [
@@ -140,7 +140,8 @@ class ReportController extends Controller implements HasMiddleware
             return (object) array_merge([
                 'id'        => $user->id,
                 'name'      => $user->name,
-                'orders'    => (int) ($perf->orders ?? 0),
+                'orders'       => (int) ($perf->orders ?? 0),
+                'no_of_orders' => (int) ($perf->no_of_orders ?? 0),
                 'revenue'   => (float) ($perf->revenue ?? 0),
                 'avg_order' => (float) ($perf->avg_order ?? 0),
             ], $fulfilment->get($user->id, $blank));
@@ -162,6 +163,7 @@ class ReportController extends Controller implements HasMiddleware
 
         $totalRevenue = (float) $rows->sum('revenue');
         $totalOrders  = (int) $rows->sum('orders');
+        $totalNoOfOrders = (int) $rows->sum('no_of_orders');
         $topEarner    = $rows->first(fn ($r) => $r->revenue > 0);
         $topCloser    = $rows->sortByDesc('orders')->first(fn ($r) => $r->orders > 0);
         $topTicket    = $rows->sortByDesc('avg_order')->first(fn ($r) => $r->avg_order > 0);
@@ -181,6 +183,7 @@ class ReportController extends Controller implements HasMiddleware
             'total'        => $totalRevenue,
             'totalRevenue' => $totalRevenue,
             'totalOrders'  => $totalOrders,
+            'totalNoOfOrders' => $totalNoOfOrders,
             'topEarner'    => $topEarner,
             'topCloser'    => $topCloser,
             'topTicket'    => $topTicket,
@@ -269,7 +272,7 @@ class ReportController extends Controller implements HasMiddleware
 
         $headers = [
             'Order Number', 'Creation Date', 'Requested Delivery Date', 'Actual Delivery Date',
-            'Customer', 'ZIP', 'Sales Person', 'Total', 'Payment Status', 'Order Status',
+            'Customer', 'No. of Orders', 'ZIP', 'Sales Person', 'Total', 'Payment Status', 'Order Status',
         ];
 
         $rows = function () use ($query) {
@@ -280,6 +283,7 @@ class ReportController extends Controller implements HasMiddleware
                     $o->requested_delivery_date?->format('Y-m-d'),
                     $o->actual_delivery_date?->format('Y-m-d'),
                     $o->customer?->name,
+                    $o->number_of_orders,
                     $o->zip_code,
                     $o->salesPerson?->name,
                     $o->grand_total,
@@ -304,6 +308,7 @@ class ReportController extends Controller implements HasMiddleware
             return [
                 $r->name,
                 $r->orders,
+                $r->no_of_orders,
                 $r->revenue,
                 round((float) $r->avg_order, 2),
                 $f['total'],
@@ -320,7 +325,7 @@ class ReportController extends Controller implements HasMiddleware
         return $this->exportRows(
             'sales-person-report-' . $stamp,
             [
-                'Sales Person', 'Orders (Countable)', 'Revenue', 'Average Order Value',
+                'Sales Person', 'Orders (Countable)', 'No. of Orders', 'Revenue', 'Average Order Value',
                 'Total Orders', 'Delivered', 'Cancelled', 'Returned', 'In Progress',
                 'Delivered:Cancelled Ratio', 'Completion Rate', 'Cancellation Rate',
             ],

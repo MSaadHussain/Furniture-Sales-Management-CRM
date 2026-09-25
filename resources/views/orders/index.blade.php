@@ -181,30 +181,32 @@
                 @endcan
             </x-empty-state>
         @else
-            {{-- Desktop compact table with NO horizontal scrolling --}}
-            <div class="hidden lg:block">
+            {{-- Desktop table. It is tuned to fit a small laptop without
+                 scrolling, but the wrapper scrolls rather than letting the
+                 table push the whole page sideways. --}}
+            <div class="hidden lg:block overflow-x-auto">
                 <table class="w-full text-left table-auto">
                     <thead class="border-b border-line dark:border-strokedark bg-surface/40 dark:bg-boxdark2">
                         <tr>
                             {{-- Click any header to sort; clicking the active one flips direction. --}}
                             {{-- Two sort keys, matching the two lines in the cell below. --}}
-                            <x-sort-header column="order_number" label="Order" class="py-3 px-3"
+                            <x-sort-header column="order_number" label="Order" class="py-3 px-2"
                                            sub="created" sub-label="Date created" />
-                            <x-sort-header column="customer" label="Customer" class="py-3 px-3" default="asc" />
-                            <th class="ta-th py-3 px-3">Items</th>
-                            <th class="ta-th py-3 px-3 text-center">No. of Orders</th>
-                            <x-sort-header column="sales_person" label="Sales Person" class="py-3 px-3" default="asc" />
-                            <x-sort-header column="requested" label="Delivery" class="py-3 px-3" />
-                            <x-sort-header column="order_status" label="Order Status" class="py-3 px-3" default="asc" />
-                            <x-sort-header column="total" label="Total" align="right" class="py-3 px-3" />
-                            <th class="ta-th py-3 px-3 text-right">Action</th>
+                            <x-sort-header column="customer" label="Customer" class="py-3 px-2" default="asc" />
+                            <th class="ta-th py-3 px-2">Items</th>
+                            <th class="ta-th py-3 px-2 text-center">No. of Orders</th>
+                            <x-sort-header column="sales_person" label="Sales Person" class="py-3 px-2" default="asc" />
+                            <x-sort-header column="requested" label="Delivery" class="py-3 px-2" />
+                            <x-sort-header column="order_status" label="Order Status" class="py-3 px-2" default="asc" />
+                            <x-sort-header column="total" label="Total" align="right" class="py-3 px-2" />
+                            <th class="ta-th py-3 px-2 text-right">Action</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-line dark:divide-strokedark text-sm">
                         @foreach ($orders as $order)
                             <tr class="transition hover:bg-surface/60 dark:hover:bg-boxdark/50">
                                 {{-- Order Number & Date --}}
-                                <td class="py-2.5 px-3 whitespace-nowrap">
+                                <td class="py-2.5 px-2 whitespace-nowrap">
                                     <a href="{{ route('orders.show', $order) }}" class="font-bold text-base text-brand hover:underline" title="{{ $order->order_number }}">
                                         {{ $order->display_number }}
                                     </a>
@@ -214,14 +216,14 @@
                                 {{-- Customer name and delivery address. The address
                                      carries its own copy button so it can be pasted
                                      straight into a delivery note or map. --}}
-                                <td class="py-2.5 px-3">
-                                    <p class="font-bold text-ink dark:text-white truncate max-w-[180px]" title="{{ $order->customer?->name }}">
+                                <td class="py-2.5 px-2">
+                                    <p class="font-bold text-ink dark:text-white truncate max-w-[150px]" title="{{ $order->customer?->name }}">
                                         {{ $order->customer?->name ?? 'Unknown' }}
                                     </p>
                                     @php($address = $order->deliveryAddress())
                                     @if ($address !== '')
                                         <div class="mt-0.5 flex items-start gap-1" x-data="{ copied: false, text: @js($address) }">
-                                            <span class="text-xs text-muted dark:text-gray-400 break-words max-w-[180px]" title="{{ $address }}">{{ $address }}</span>
+                                            <span class="text-xs text-muted dark:text-gray-400 break-words max-w-[150px]" title="{{ $address }}">{{ $address }}</span>
                                             <button type="button"
                                                     data-copy-btn="true"
                                                     x-on:click="window.copyOrderToClipboard(text); copied = true; setTimeout(() => copied = false, 2000)"
@@ -238,7 +240,7 @@
 
                                 {{-- Items. A single item reads as one line; two or more
                                      are listed in full so no name is cut short. --}}
-                                <td class="py-2.5 px-3 max-w-[240px]">
+                                <td class="py-2.5 px-2 max-w-[190px]">
                                     @if ($order->items->count() > 1)
                                         <ul class="list-disc pl-4 space-y-0.5 font-medium text-ink dark:text-white">
                                             @foreach ($order->items as $item)
@@ -262,22 +264,22 @@
                                 </td>
 
                                 {{-- No. of Orders: reference figure only, never a quantity. --}}
-                                <td class="py-2.5 px-3 text-center whitespace-nowrap">
+                                <td class="py-2.5 px-2 text-center whitespace-nowrap">
                                     <span class="font-semibold text-ink dark:text-white">
                                         {{ $order->number_of_orders !== null ? $order->number_of_orders : '--' }}
                                     </span>
                                 </td>
 
                                 {{-- Sales Person --}}
-                                <td class="py-2.5 px-3 whitespace-nowrap">
+                                <td class="py-2.5 px-2 whitespace-nowrap">
                                     <span class="inline-flex items-center gap-1.5 font-medium text-ink dark:text-white">
                                         <i class="fa-solid fa-user-tie text-[10px] text-muted dark:text-gray-400"></i>
-                                        <span>{{ $order->salesPerson?->name ?? '--' }}</span>
+                                        <span class="truncate max-w-[110px]" title="{{ $order->salesPerson?->name }}">{{ $order->salesPerson?->name ?? '--' }}</span>
                                     </span>
                                 </td>
 
                                  {{-- Delivery Schedule & Inline Record Delivery --}}
-                                <td class="py-2.5 px-3">
+                                <td class="py-2.5 px-2">
                                     <div class="whitespace-nowrap">
                                         <p class="font-medium text-ink dark:text-white">{{ $order->requested_delivery_date?->format('d M Y') }}</p>
                                         
@@ -311,7 +313,7 @@
                                 </td>
 
                                 {{-- Inline Order Status Dropdown --}}
-                                <td class="py-2.5 px-3 whitespace-nowrap">
+                                <td class="py-2.5 px-2 whitespace-nowrap">
                                     @can('manage-orders')
                                         <form method="POST" action="{{ route('orders.status', $order) }}" x-data x-ref="statusForm{{ $order->id }}">
                                             @csrf
@@ -330,12 +332,12 @@
                                 </td>
 
                                 {{-- Total Revenue in € --}}
-                                <td class="py-2.5 px-3 text-right font-black text-sm text-ink dark:text-white whitespace-nowrap">
+                                <td class="py-2.5 px-2 text-right font-black text-sm text-ink dark:text-white whitespace-nowrap">
                                     <x-money :amount="$order->grand_total" />
                                 </td>
 
                                 {{-- Action Link --}}
-                                <td class="py-2.5 px-3 text-right whitespace-nowrap">
+                                <td class="py-2.5 px-2 text-right whitespace-nowrap">
                                     <div class="flex items-center justify-end gap-1" x-data="{ copied: false, text: @js($order->copyDetailsText()) }">
                                         <button type="button"
                                                 data-copy-btn="true"

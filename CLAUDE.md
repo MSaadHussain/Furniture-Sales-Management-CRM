@@ -129,7 +129,7 @@ delivery board and overdue counts.
 | OrderService           | Create/update orders, recalculate every total server-side, resolve or reuse the customer, sync snapshotted items, status/payment/delivery/cancel transitions |
 | OrderNumberService     | `SALE-2026-000001`; sequential per year, locked, never reused (includes soft-deleted orders) |
 | DeliveryService        | Daily board, month calendar counts, on-time performance, overdue/pending counts, 7-day outlook |
-| SalesAnalyticsService  | KPIs with growth, trend buckets (day/week/month), top products, categories, colour demand, sales-person performance, customer stats |
+| SalesAnalyticsService  | KPIs with growth, trend buckets (day/week/month), top products, categories, colour demand, sales-person performance (including the summed `number_of_orders` counter), customer stats |
 | ZipAnalyticsService    | ZIP ranking with share + growth, quiet areas, per-ZIP product mix, marketing insights |
 | DateRangeService       | The 10 date presets, previous-period resolution (whole month → previous whole month), growth maths with `N/A` on a zero baseline |
 | AuditService           | Audit trail with before/after diffing and redaction of secrets |
@@ -240,6 +240,7 @@ figures are display only. Data reaches Alpine via `Js::from()`.
 | ProfileTest, Auth/*       | Self-service profile and Breeze auth |
 | GoogleSheetSyncTest       | Dirty tracking, backfill, upsert payloads, deletions, request signing, retry on failure |
 | CustomerIdentityOnOrderEditTest | Changing the phone on an order moves it to another/new customer instead of rewriting the shared record |
+| NumberOfOrdersReportingTest | The "No. of Orders" counter summed per sales person and per period, in both reports and their exports |
 
 The suite runs against **MySQL** (`crmapp_test`), not SQLite, because the reports use
 `DATE_FORMAT`, `FIELD`, `DATEDIFF` and `GREATEST`. See `phpunit.xml`.

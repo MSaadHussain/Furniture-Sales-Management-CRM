@@ -12,8 +12,11 @@
     @include('reports._nav')
     <x-date-range :range="$range" :presets="$presets" />
 
-    <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <x-stat-card label="Orders" icon="fa-receipt" icon-color="#465FFF" :value="number_format($totals->orders ?? 0)" />
+        {{-- The operator-entered counter, summed. Not the order count above. --}}
+        <x-stat-card label="No. of Orders" icon="fa-list-ol" icon-color="#7A5AF8"
+                     :value="number_format($totals->no_of_orders ?? 0)" />
         <x-stat-card label="Revenue" icon="fa-sack-dollar" icon-color="#12B76A"
                      :value="\App\Support\Money::compact($totals->revenue ?? 0)" />
         <x-stat-card label="Outstanding" icon="fa-hourglass-half" icon-color="#F79009"
@@ -88,6 +91,7 @@
                             <th class="ta-th">Created</th>
                             <th class="ta-th">Requested</th>
                             <th class="ta-th">Customer</th>
+                            <th class="ta-th text-center">No. of Orders</th>
                             <th class="ta-th">ZIP</th>
                             <th class="ta-th">Sales Person</th>
                             <th class="ta-th text-right">Total</th>
@@ -105,6 +109,7 @@
                                 <td class="ta-td text-muted">{{ $order->order_created_at?->format('d M Y') }}</td>
                                 <td class="ta-td">{{ $order->requested_delivery_date?->format('d M Y') }}</td>
                                 <td class="ta-td">{{ $order->customer?->name }}</td>
+                                <td class="ta-td text-center font-semibold">{{ $order->number_of_orders !== null ? $order->number_of_orders : '--' }}</td>
                                 <td class="ta-td font-semibold">{{ $order->zip_code }}</td>
                                 <td class="ta-td">{{ $order->salesPerson?->name ?? '--' }}</td>
                                 <td class="ta-td text-right font-semibold"><x-money :amount="$order->grand_total" /></td>

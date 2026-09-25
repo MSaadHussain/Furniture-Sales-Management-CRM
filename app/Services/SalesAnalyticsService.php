@@ -231,6 +231,9 @@ class SalesAnalyticsService
             ->join('users', 'users.id', '=', 'orders.sales_person_id')
             ->selectRaw('users.id, users.name')
             ->selectRaw('COUNT(*) as orders')
+            // The operator-entered "No. of Orders" on each order, summed. It is
+            // a reference figure and deliberately separate from the row count.
+            ->selectRaw('COALESCE(SUM(orders.number_of_orders), 0) as no_of_orders')
             ->selectRaw('COALESCE(SUM(orders.grand_total), 0) as revenue')
             ->selectRaw('COALESCE(AVG(orders.grand_total), 0) as avg_order')
             ->groupBy('users.id', 'users.name')
