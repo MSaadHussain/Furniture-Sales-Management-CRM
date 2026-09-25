@@ -308,12 +308,26 @@ class OrderService
             $customer = Customer::find($data['customer_id']);
         }
 
-        if (! $customer && ! empty($fields['phone'])) {
-            $customer = Customer::findByPhone($fields['phone']);
-        }
-
         if (! $customer && $order) {
             $customer = $order->customer;
+        }
+
+        // The phone number is what identifies a customer, so it decides which
+        // record this order belongs to -- not the id the form happened to carry.
+        //
+        // A customer record is shared by every order they have ever placed. If
+        // the number on the form is not theirs, editing this one order must not
+        // rewrite that shared record and silently rewrite their other orders
+        // too. A changed number means a different person: link to whoever owns
+        // that number, or create a new customer, and leave the old one alone.
+        if (! empty($fields['phone'])) {
+            // findByPhone, not a string compare, so re-typing the same number
+            // in a different format is not mistaken for a new customer.
+            $byPhone = Customer::findByPhone($fields['phone']);
+
+            if (! $customer || ! $byPhone || $byPhone->id !== $customer->id) {
+                $customer = $byPhone;
+            }
         }
 
         if ($customer) {

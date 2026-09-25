@@ -211,6 +211,13 @@ figures are display only. Data reaches Alpine via `Js::from()`.
 - **Payment status drives amount paid.** Paid → full, Pending/Refunded → 0,
   Partial → the entered amount, clamped to the grand total.
 - **Cancelled and returned orders are frozen** for everyone, Admins included.
+- **The phone number identifies the customer.** A customer record is shared by every
+  order they have placed, so `OrderService::resolveCustomer()` decides ownership from
+  the phone on the form, not from the `customer_id` the form carries. Change the number
+  while editing an order and that order moves to whoever owns the new number, or to a
+  newly created customer — the record on file is never rewritten, so the customer's
+  other orders keep their details. Matching goes through `Customer::findByPhone()`, so
+  retyping the same number in a different format is a correction, not a new customer.
 - **Products/categories with history are deactivated, not deleted.**
 - **Aggregate SQL only.** Reports never pull rows into PHP to count them; filtering and
   pagination are server-side.
@@ -232,6 +239,7 @@ figures are display only. Data reaches Alpine via `Js::from()`.
 | UserManagementTest        | Registration, hashing, active-seller rule, last-admin guard |
 | ProfileTest, Auth/*       | Self-service profile and Breeze auth |
 | GoogleSheetSyncTest       | Dirty tracking, backfill, upsert payloads, deletions, request signing, retry on failure |
+| CustomerIdentityOnOrderEditTest | Changing the phone on an order moves it to another/new customer instead of rewriting the shared record |
 
 The suite runs against **MySQL** (`crmapp_test`), not SQLite, because the reports use
 `DATE_FORMAT`, `FIELD`, `DATEDIFF` and `GREATEST`. See `phpunit.xml`.
