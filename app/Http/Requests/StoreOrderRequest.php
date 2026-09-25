@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\ConfirmationStatus;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
@@ -65,6 +66,7 @@ class StoreOrderRequest extends FormRequest
             'requested_delivery_date' => ['required', 'date'],
             'actual_delivery_date'    => ['nullable', 'date'],
             'order_status'            => ['nullable', Rule::in(array_column(OrderStatus::cases(), 'value'))],
+            'confirmation_status'     => ['nullable', Rule::in(ConfirmationStatus::values())],
             'payment_status'          => ['nullable', Rule::in(array_column(PaymentStatus::cases(), 'value'))],
             'payment_method'          => ['nullable', Rule::in(array_column(PaymentMethod::cases(), 'value'))],
             'amount_paid'             => ['nullable', 'numeric', 'min:0'],

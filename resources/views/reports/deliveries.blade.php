@@ -49,9 +49,18 @@
                 <label class="ta-label">Order status</label>
                 <select name="order_status" class="ta-input">
                     <option value="">All</option>
-                    <option value="new" @selected(($filters['order_status'] ?? '') === 'new')>Pending</option>
-                    <option value="delivered" @selected(($filters['order_status'] ?? '') === 'delivered')>Delivered</option>
-                    <option value="cancelled" @selected(($filters['order_status'] ?? '') === 'cancelled')>Cancelled</option>
+                    @foreach (\App\Enums\OrderStatus::filterGroups() as $key => $group)
+                        <option value="{{ $key }}" @selected(($filters['order_status'] ?? '') === $key)>{{ $group['label'] }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div>
+                <label class="ta-label">Confirmation</label>
+                <select name="confirmation_status" class="ta-input">
+                    <option value="">All</option>
+                    @foreach (\App\Enums\ConfirmationStatus::cases() as $case)
+                        <option value="{{ $case->value }}" @selected(($filters['confirmation_status'] ?? '') === $case->value)>{{ $case->label() }}</option>
+                    @endforeach
                 </select>
             </div>
             <button type="submit" class="btn btn-primary"><i class="fa-solid fa-filter"></i> Apply</button>
@@ -72,8 +81,10 @@
                             <th class="ta-th">Order</th>
                             <th class="ta-th">Customer</th>
                             <th class="ta-th">ZIP</th>
+                            <th class="ta-th text-center">No. of Orders</th>
                             <th class="ta-th">Sales Person</th>
                             <th class="ta-th">Status</th>
+                            <th class="ta-th">Confirmation</th>
                             <th class="ta-th">Performance</th>
                             <th class="ta-th text-right">Total</th>
                         </tr>
@@ -91,8 +102,16 @@
                                 </td>
                                 <td class="ta-td">{{ $order->customer?->name }}</td>
                                 <td class="ta-td font-semibold">{{ $order->zip_code }}</td>
+                                <td class="ta-td text-center font-semibold">{{ $order->number_of_orders !== null ? $order->number_of_orders : '--' }}</td>
                                 <td class="ta-td">{{ $order->salesPerson?->name ?? '--' }}</td>
                                 <td class="ta-td"><x-status-pill :status="$order->order_status" /></td>
+                                <td class="ta-td">
+                                    <span class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold whitespace-nowrap"
+                                          style="background-color: {{ $order->confirmation_status?->color() }}1A; color: {{ $order->confirmation_status?->color() }};">
+                                        <i class="fa-solid {{ $order->confirmation_status?->icon() }} text-[9px]"></i>
+                                        {{ $order->confirmation_status?->label() }}
+                                    </span>
+                                </td>
                                 <td class="ta-td">
                                     <span class="ta-badge"
                                           style="background-color: {{ $result->color() }}1A; color: {{ $result->color() }};">

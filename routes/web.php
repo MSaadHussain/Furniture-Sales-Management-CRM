@@ -40,6 +40,7 @@ Route::middleware(['auth', 'verified', 'password.24h', 'track.activity'])->group
     Route::get('orders/lookup/product/{product}', [OrderController::class, 'productDetails'])->name('orders.lookup.product');
     Route::resource('orders', OrderController::class);
     Route::match(['post', 'patch'], 'orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.status');
+    Route::match(['post', 'patch'], 'orders/{order}/confirmation', [OrderController::class, 'updateConfirmation'])->name('orders.confirmation');
     Route::match(['post', 'patch'], 'orders/{order}/payment', [OrderController::class, 'updatePayment'])->name('orders.payment');
     Route::match(['post', 'patch'], 'orders/{order}/deliver', [OrderController::class, 'recordDelivery'])->name('orders.deliver');
     Route::match(['post', 'patch'], 'orders/{order}/cancel', [OrderController::class, 'cancel'])->name('orders.cancel');

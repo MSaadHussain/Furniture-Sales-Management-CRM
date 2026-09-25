@@ -15,7 +15,14 @@
 @section('content')
 <div class="space-y-3">
 
-    {{-- ========================= Compact Top KPI Bar ========================= --}}
+    {{-- ========================= Compact Top KPI Bar =========================
+         Every figure comes from one query over the filtered set. With no status
+         filter that set is the countable one (delivered), which is what the
+         caption says; an explicit status filter takes over from there. --}}
+    @php
+        $statusFilter = \App\Enums\OrderStatus::tryFrom((string) ($filters['order_status'] ?? ''));
+        $scopeLabel   = $statusFilter ? $statusFilter->label() . ' only' : 'Excl. cancelled';
+    @endphp
     <div class="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         <div class="flex items-center justify-between rounded-xl border border-line bg-white px-3.5 py-2.5 shadow-xs dark:border-strokedark dark:bg-boxdark">
             <div class="flex items-center gap-2.5">
@@ -27,7 +34,7 @@
                     <span class="text-base font-black text-ink dark:text-white leading-tight">{{ number_format($totals->orders ?? 0) }}</span>
                 </div>
             </div>
-            <span class="text-[10px] text-muted">Excl. cancelled</span>
+            <span class="text-[10px] text-muted">{{ $scopeLabel }}</span>
         </div>
 
         {{-- The counter typed on each order, summed over whatever is filtered. --}}
@@ -114,9 +121,22 @@
                 <div class="w-36">
                     <select name="order_status" class="ta-input !py-1.5 !text-xs w-full font-semibold">
                         <option value="">Status: All</option>
-                        <option value="new" @selected(($filters['order_status'] ?? '') === 'new')>Pending</option>
-                        <option value="delivered" @selected(($filters['order_status'] ?? '') === 'delivered')>Delivered</option>
-                        <option value="cancelled" @selected(($filters['order_status'] ?? '') === 'cancelled')>Cancelled</option>
+                        {{-- One option per distinct label: nine statuses collapse into
+                             three, and each choice matches every status behind it. --}}
+                        @foreach (\App\Enums\OrderStatus::filterGroups() as $key => $group)
+                            <option value="{{ $key }}" @selected(($filters['order_status'] ?? '') === $key)>{{ $group['label'] }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                {{-- Confirmation --}}
+                <div class="w-36">
+                    <select name="confirmation_status" class="ta-input !py-1.5 !text-xs w-full">
+                        <option value="">Confirm: All</option>
+                        @foreach (\App\Enums\ConfirmationStatus::cases() as $case)
+                            <option value="{{ $case->value }}" class="font-bold"
+                                    @selected(($filters['confirmation_status'] ?? '') === $case->value)>{{ $case->label() }}</option>
+                        @endforeach
                     </select>
                 </div>
 

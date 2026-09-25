@@ -258,6 +258,9 @@ class SalesAnalyticsService
             ->whereNotNull('orders.sales_person_id')
             ->selectRaw('orders.sales_person_id as id')
             ->selectRaw('COUNT(*) as total')
+            // The entered counter over *every* order, not just the delivered
+            // ones, so it lines up with `total` on the same row.
+            ->selectRaw('COALESCE(SUM(orders.number_of_orders), 0) as no_of_orders_all')
             ->selectRaw('SUM(orders.order_status = ?) as delivered', [OrderStatus::Delivered->value])
             ->selectRaw('SUM(orders.order_status = ?) as cancelled', [OrderStatus::Cancelled->value])
             ->selectRaw('SUM(orders.order_status = ?) as returned', [OrderStatus::Returned->value])
@@ -273,6 +276,7 @@ class SalesAnalyticsService
                 (int) $row->returned,
                 (float) $row->delivered_value,
                 (float) $row->cancelled_value,
+                (int) $row->no_of_orders_all,
             ));
     }
 
@@ -290,12 +294,15 @@ class SalesAnalyticsService
         int $returned = 0,
         float $deliveredValue = 0,
         float $cancelledValue = 0,
+        int $noOfOrdersAll = 0,
     ): array {
         $lost    = $cancelled + $returned;
         $settled = $delivered + $lost;
 
         return [
             'total'           => $total,
+            // The entered counter across every one of those orders.
+            'no_of_orders_all' => $noOfOrdersAll,
             'delivered'       => $delivered,
             'cancelled'       => $cancelled,
             'returned'        => $returned,
@@ -354,6 +361,8 @@ class SalesAnalyticsService
             ->join('customers', 'customers.id', '=', 'orders.customer_id')
             ->selectRaw('customers.id, customers.name, customers.zip_code, customers.phone')
             ->selectRaw('COUNT(*) as orders')
+            // The operator-entered "No. of Orders" on each order, summed.
+            ->selectRaw('COALESCE(SUM(orders.number_of_orders), 0) as no_of_orders')
             ->selectRaw('COALESCE(SUM(orders.grand_total), 0) as revenue')
             ->selectRaw('MAX(orders.order_created_at) as last_order_at')
             ->groupBy('customers.id', 'customers.name', 'customers.zip_code', 'customers.phone')

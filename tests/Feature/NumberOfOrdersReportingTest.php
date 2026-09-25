@@ -111,6 +111,70 @@ class NumberOfOrdersReportingTest extends TestCase
         $this->assertSame(0, (int) $response->viewData('totalNoOfOrders'));
     }
 
+    /**
+     * The ratio table counts every order a seller wrote, so its counter has to
+     * do the same -- the leaderboard's figure covers delivered orders only.
+     */
+    public function test_the_ratio_table_sums_across_all_of_a_sellers_orders(): void
+    {
+        $this->order(3);                                              // delivered
+        $this->order(5, ['order_status' => OrderStatus::New]);         // still open
+        $this->order(4, ['order_status' => OrderStatus::Cancelled]);   // lost
+
+        $response = $this->actingAs($this->admin)
+            ->get(route('reports.sales-persons', ['range' => 'this_month']))
+            ->assertOk();
+
+        $row = $response->viewData('rows')->firstWhere('name', 'Mujeeb');
+
+        // Every order on the row.
+        $this->assertSame(3, (int) $row->total);
+        $this->assertSame(12, (int) $row->no_of_orders_all);
+
+        // The leaderboard figure stays delivered-only, matching its own column.
+        $this->assertSame(3, (int) $row->no_of_orders);
+
+        $this->assertSame(12, (int) $response->viewData('team')['no_of_orders_all']);
+    }
+
+    /** Every report that lists or groups orders carries the counter. */
+    public function test_it_reaches_the_customer_delivery_and_zip_reports(): void
+    {
+        $this->order(6, ['zip_code' => '75013', 'requested_delivery_date' => today()]);
+        $this->order(4, ['zip_code' => '75013', 'requested_delivery_date' => today()]);
+
+        $customers = $this->actingAs($this->admin)
+            ->get(route('reports.customers', ['range' => 'this_month']))
+            ->assertOk()
+            ->viewData('top');
+        $this->assertSame(10, (int) $customers->sum('no_of_orders'));
+
+        $zips = $this->actingAs($this->admin)
+            ->get(route('reports.zip', ['range' => 'this_month']))
+            ->assertOk()
+            ->viewData('ranking');
+        $this->assertSame(10, (int) collect($zips)->firstWhere('zip_code', '75013')['no_of_orders']);
+
+        foreach (['reports.customers', 'reports.zip', 'reports.deliveries'] as $route) {
+            $html = $this->actingAs($this->admin)->get(route($route, ['range' => 'this_month']))->assertOk()->getContent();
+            $this->assertStringContainsString('No. of Orders', $html, "{$route} has no No. of Orders column.");
+        }
+    }
+
+    public function test_every_report_export_carries_the_counter(): void
+    {
+        $this->order(8, ['zip_code' => '75013', 'requested_delivery_date' => today()]);
+
+        foreach (['customers', 'zip', 'deliveries'] as $report) {
+            $csv = $this->actingAs($this->admin)
+                ->get(route('reports.export', ['report' => $report, 'range' => 'this_month', 'format' => 'csv']))
+                ->assertOk()
+                ->streamedContent();
+
+            $this->assertStringContainsString('No. of Orders', $csv, "The {$report} export has no No. of Orders column.");
+        }
+    }
+
     public function test_both_exports_carry_the_counter(): void
     {
         $this->order(8);

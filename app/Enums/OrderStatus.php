@@ -32,6 +32,56 @@ enum OrderStatus: string
         };
     }
 
+    /**
+     * The three choices a user actually sees, each mapped to the raw statuses
+     * behind it. label() collapses nine cases into three, so a filter built by
+     * looping the cases listed "Pending" six times and, worse, matched only one
+     * of them. Keyed by the lower-cased label.
+     *
+     * @return array<string,array{label:string,values:list<string>}>
+     */
+    public static function filterGroups(): array
+    {
+        $groups = [];
+
+        foreach (self::cases() as $case) {
+            $key = strtolower($case->label());
+            $groups[$key]['label']    = $case->label();
+            $groups[$key]['values'][] = $case->value;
+        }
+
+        return $groups;
+    }
+
+    /**
+     * Raw statuses a filter choice stands for. Accepts a group key ('pending')
+     * or a single raw status ('new'), so older links keep working.
+     *
+     * @return list<string>
+     */
+    public static function valuesForFilter(?string $choice): array
+    {
+        $choice = (string) $choice;
+        $groups = self::filterGroups();
+
+        if (isset($groups[$choice])) {
+            return $groups[$choice]['values'];
+        }
+
+        return self::tryFrom($choice) ? [$choice] : [];
+    }
+
+    /**
+     * Statuses that mean the sale did not happen. Distinct from
+     * revenueValues(), which is only Delivered.
+     *
+     * @return list<string>
+     */
+    public static function lostValues(): array
+    {
+        return [self::Cancelled->value, self::Returned->value];
+    }
+
     public function color(): string
     {
         return match ($this) {

@@ -380,6 +380,20 @@
                         </select>
                     </div>
 
+                    {{-- Confirmation: whether the sale is real. Separate from the
+                         order status, which tracks where the goods are. --}}
+                    <div class="sm:col-span-4">
+                        <label class="text-base font-semibold text-slate-500 dark:text-white block mb-1">Confirmation</label>
+                        <select name="confirmation_status" class="ta-input !py-2 font-semibold">
+                            @foreach (\App\Enums\ConfirmationStatus::cases() as $case)
+                                <option value="{{ $case->value }}"
+                                        @selected(old('confirmation_status', $order->confirmation_status?->value ?? \App\Enums\ConfirmationStatus::DEFAULT->value) === $case->value)>
+                                    {{ $case->label() }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
                     @if ($isEdit)
                         <div class="sm:col-span-4">
                             <label class="text-base font-semibold text-slate-500 dark:text-white block mb-1">Actual Delivery Date</label>

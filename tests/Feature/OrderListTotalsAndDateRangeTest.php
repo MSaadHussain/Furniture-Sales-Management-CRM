@@ -93,7 +93,7 @@ class OrderListTotalsAndDateRangeTest extends TestCase
         $this->assertSame(2, (int) $totals->customers);
     }
 
-    public function test_cancelled_orders_stay_out_of_the_kpi_bar(): void
+    public function test_a_cancelled_order_is_not_counted_alongside_live_ones(): void
     {
         $this->order(6);
         $this->order(100, null, ['order_status' => OrderStatus::Cancelled]);
@@ -105,6 +105,166 @@ class OrderListTotalsAndDateRangeTest extends TestCase
 
         $this->assertSame(6, (int) $totals->no_of_orders);
         $this->assertSame(1, (int) $totals->customers);
+    }
+
+    /**
+     * The KPI bar used to apply `countable()` on top of the filter, and
+     * `revenueValues()` is only `delivered`. So filtering the list by any other
+     * status left the whole bar reading zero while the table showed rows.
+     */
+    public function test_filtering_by_a_status_makes_the_bar_describe_those_orders(): void
+    {
+        $this->order(2, null, ['order_status' => OrderStatus::New]);
+        $this->order(3, null, ['order_status' => OrderStatus::New]);
+        $this->order(9, null, ['order_status' => OrderStatus::Delivered]);
+
+        $totals = $this->actingAs($this->admin)
+            ->get(route('orders.index', ['order_status' => 'new']))
+            ->assertOk()
+            ->viewData('totals');
+
+        $this->assertSame(2, (int) $totals->orders);
+        $this->assertSame(5, (int) $totals->no_of_orders);
+        $this->assertSame(2, (int) $totals->customers);
+    }
+
+    public function test_filtering_by_cancelled_counts_the_cancelled_orders(): void
+    {
+        $this->order(4, null, ['order_status' => OrderStatus::Cancelled]);
+        $this->order(7, null, ['order_status' => OrderStatus::Delivered]);
+
+        $totals = $this->actingAs($this->admin)
+            ->get(route('orders.index', ['order_status' => 'cancelled']))
+            ->assertOk()
+            ->viewData('totals');
+
+        $this->assertSame(1, (int) $totals->orders);
+        $this->assertSame(4, (int) $totals->no_of_orders);
+    }
+
+    /**
+     * Unfiltered, the bar describes the list. It used to count delivered orders
+     * only, so a list full of pending orders sat under an "Orders Matched"
+     * figure that matched none of them.
+     */
+    public function test_without_a_status_filter_the_bar_covers_every_live_order(): void
+    {
+        $this->order(4, null, ['order_status' => OrderStatus::New]);
+        $this->order(7, null, ['order_status' => OrderStatus::Delivered]);
+        $this->order(2, null, ['order_status' => OrderStatus::OutForDelivery]);
+
+        $totals = $this->actingAs($this->admin)
+            ->get(route('orders.index'))
+            ->assertOk()
+            ->viewData('totals');
+
+        $this->assertSame(3, (int) $totals->orders);
+        $this->assertSame(13, (int) $totals->no_of_orders);
+        $this->assertSame(3, (int) $totals->customers);
+    }
+
+    /** Only the orders that never happened are dropped, as the caption says. */
+    public function test_cancelled_and_returned_stay_out_of_the_unfiltered_bar(): void
+    {
+        $this->order(5, null, ['order_status' => OrderStatus::New]);
+        $this->order(50, null, ['order_status' => OrderStatus::Cancelled]);
+        $this->order(60, null, ['order_status' => OrderStatus::Returned]);
+
+        $totals = $this->actingAs($this->admin)
+            ->get(route('orders.index'))
+            ->assertOk()
+            ->viewData('totals');
+
+        $this->assertSame(1, (int) $totals->orders);
+        $this->assertSame(5, (int) $totals->no_of_orders);
+    }
+
+    public function test_the_unfiltered_bar_matches_the_rows_on_screen(): void
+    {
+        foreach ([OrderStatus::New, OrderStatus::Processing, OrderStatus::Delivered] as $status) {
+            $this->order(1, null, ['order_status' => $status]);
+        }
+
+        $response = $this->actingAs($this->admin)->get(route('orders.index'))->assertOk();
+
+        $this->assertSame(
+            count($response->viewData('orders')->items()),
+            (int) $response->viewData('totals')->orders,
+            'The KPI bar should count exactly the orders the table lists.'
+        );
+    }
+
+    /* ---------------------------------------------------------------------
+     | Status filter grouping
+     |--------------------------------------------------------------------- */
+
+    /**
+     * label() collapses nine statuses into three, so a dropdown built by
+     * looping the cases showed "Pending" six times -- and each of those options
+     * matched only its own status.
+     */
+    public function test_the_status_dropdown_offers_each_label_once(): void
+    {
+        $groups = OrderStatus::filterGroups();
+
+        $this->assertSame(['pending', 'delivered', 'cancelled'], array_keys($groups));
+        $this->assertSame(['Pending', 'Delivered', 'Cancelled'], array_column($groups, 'label'));
+
+        foreach (['orders.index', 'reports.sales'] as $route) {
+            $html = $this->actingAs($this->admin)->get(route($route))->assertOk()->getContent();
+            $this->assertSame(1, substr_count($html, '>Pending<'), "{$route} lists Pending more than once.");
+            $this->assertSame(1, substr_count($html, '>Cancelled<'), "{$route} lists Cancelled more than once.");
+        }
+    }
+
+    public function test_filtering_by_pending_catches_every_status_behind_that_label(): void
+    {
+        $this->order(1, null, ['order_status' => OrderStatus::New]);
+        $this->order(1, null, ['order_status' => OrderStatus::Processing]);
+        $this->order(1, null, ['order_status' => OrderStatus::OutForDelivery]);
+        $this->order(1, null, ['order_status' => OrderStatus::Delivered]);
+
+        $orders = $this->actingAs($this->admin)
+            ->get(route('orders.index', ['order_status' => 'pending']))
+            ->assertOk()
+            ->viewData('orders');
+
+        $this->assertCount(3, $orders->items());
+    }
+
+    public function test_filtering_by_cancelled_also_catches_returned(): void
+    {
+        $this->order(1, null, ['order_status' => OrderStatus::Cancelled]);
+        $this->order(1, null, ['order_status' => OrderStatus::Returned]);
+        $this->order(1, null, ['order_status' => OrderStatus::Delivered]);
+
+        $orders = $this->actingAs($this->admin)
+            ->get(route('orders.index', ['order_status' => 'cancelled']))
+            ->assertOk()
+            ->viewData('orders');
+
+        $this->assertCount(2, $orders->items());
+    }
+
+    /** An older bookmarked link with a raw status still resolves. */
+    public function test_a_raw_status_value_still_filters(): void
+    {
+        $this->order(1, null, ['order_status' => OrderStatus::Delivered]);
+        $this->order(1, null, ['order_status' => OrderStatus::New]);
+
+        $orders = $this->actingAs($this->admin)
+            ->get(route('orders.index', ['order_status' => 'new']))
+            ->assertOk()
+            ->viewData('orders');
+
+        $this->assertCount(1, $orders->items());
+    }
+
+    public function test_the_sales_report_no_longer_offers_a_category_filter(): void
+    {
+        $html = $this->actingAs($this->admin)->get(route('reports.sales'))->assertOk()->getContent();
+
+        $this->assertStringNotContainsString('name="category_id"', $html);
     }
 
     /* ---------------------------------------------------------------------

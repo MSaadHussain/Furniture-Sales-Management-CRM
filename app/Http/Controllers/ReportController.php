@@ -56,8 +56,7 @@ class ReportController extends Controller implements HasMiddleware
             'totals'       => $totals,
             'trend'        => $this->sales->trend($from, $to),
             'salesPersons' => User::selectableSalesPersons()->get(['id', 'name']),
-            'categories'   => Category::orderBy('name')->get(['id', 'name']),
-            'filters'      => $request->only(['sales_person_id', 'category_id', 'zip_code', 'order_status', 'payment_status', 'product']),
+            'filters'      => $request->only(['sales_person_id', 'zip_code', 'order_status', 'confirmation_status', 'payment_status', 'product']),
         ]);
     }
 
@@ -176,6 +175,7 @@ class ReportController extends Controller implements HasMiddleware
             (int) $rows->sum('returned'),
             (float) $rows->sum('delivered_value'),
             (float) $rows->sum('cancelled_value'),
+            (int) $rows->sum('no_of_orders_all'),
         );
 
         return view('reports.sales-persons', $this->shared($from, $to, $label, $preset) + [
@@ -214,7 +214,7 @@ class ReportController extends Controller implements HasMiddleware
             'orders'      => $orders,
             'performance' => $this->deliveries->performance($from, $to),
             'overdue'     => $this->deliveries->overdueCount(),
-            'filters'     => $request->only(['performance', 'order_status']),
+            'filters'     => $request->only(['performance', 'order_status', 'confirmation_status']),
             'statuses'    => OrderStatus::cases(),
         ]);
     }
@@ -243,9 +243,9 @@ class ReportController extends Controller implements HasMiddleware
             ),
             'customers'     => $this->exportRows(
                 'customer-report-' . $stamp,
-                ['Customer', 'Phone', 'ZIP', 'Orders', 'Total Spend', 'Last Order'],
+                ['Customer', 'Phone', 'ZIP', 'Orders', 'No. of Orders', 'Total Spend', 'Last Order'],
                 $this->sales->topCustomers($from, $to, 5000)->map(fn ($r) => [
-                    $r->name, $r->phone, $r->zip_code, $r->orders, $r->revenue,
+                    $r->name, $r->phone, $r->zip_code, $r->orders, $r->no_of_orders, $r->revenue,
                     $r->last_order_at ? \Illuminate\Support\Carbon::parse($r->last_order_at)->format('Y-m-d') : null,
                 ]),
                 $format,
@@ -253,9 +253,9 @@ class ReportController extends Controller implements HasMiddleware
             // Aggregate only: no customer-level rows leave the building (44/45).
             'zip'           => $this->exportRows(
                 'zip-report-' . $stamp,
-                ['ZIP', 'Customers', 'Orders', 'Revenue', 'Average Order Value', 'Share of Orders %', 'Previous Orders', 'Order Growth %'],
+                ['ZIP', 'Customers', 'Orders', 'No. of Orders', 'Revenue', 'Average Order Value', 'Share of Orders %', 'Previous Orders', 'Order Growth %'],
                 $this->zips->ranking($from, $to, $request->query('sort', 'orders'), 1000)->map(fn ($r) => [
-                    $r['zip_code'], $r['customers'], $r['orders'], $r['revenue'], $r['avg_order'],
+                    $r['zip_code'], $r['customers'], $r['orders'], $r['no_of_orders'], $r['revenue'], $r['avg_order'],
                     $r['order_share'], $r['prev_orders'], DateRangeService::growthLabel($r['order_growth']),
                 ]),
                 $format,
@@ -272,7 +272,7 @@ class ReportController extends Controller implements HasMiddleware
 
         $headers = [
             'Order Number', 'Creation Date', 'Requested Delivery Date', 'Actual Delivery Date',
-            'Customer', 'No. of Orders', 'ZIP', 'Sales Person', 'Total', 'Payment Status', 'Order Status',
+            'Customer', 'No. of Orders', 'ZIP', 'Sales Person', 'Total', 'Payment Status', 'Order Status', 'Confirmation',
         ];
 
         $rows = function () use ($query) {
@@ -289,6 +289,7 @@ class ReportController extends Controller implements HasMiddleware
                     $o->grand_total,
                     $o->payment_status->label(),
                     $o->order_status->label(),
+                    $o->confirmation_status?->label(),
                 ];
             }
         };
@@ -312,6 +313,7 @@ class ReportController extends Controller implements HasMiddleware
                 $r->revenue,
                 round((float) $r->avg_order, 2),
                 $f['total'],
+                $f['no_of_orders_all'],
                 $f['delivered'],
                 $f['cancelled'],
                 $f['returned'],
@@ -325,8 +327,8 @@ class ReportController extends Controller implements HasMiddleware
         return $this->exportRows(
             'sales-person-report-' . $stamp,
             [
-                'Sales Person', 'Orders (Countable)', 'No. of Orders', 'Revenue', 'Average Order Value',
-                'Total Orders', 'Delivered', 'Cancelled', 'Returned', 'In Progress',
+                'Sales Person', 'Orders (Countable)', 'No. of Orders (Delivered)', 'Revenue', 'Average Order Value',
+                'Total Orders', 'No. of Orders (All)', 'Delivered', 'Cancelled', 'Returned', 'In Progress',
                 'Delivered:Cancelled Ratio', 'Completion Rate', 'Cancellation Rate',
             ],
             $rows,
@@ -340,7 +342,7 @@ class ReportController extends Controller implements HasMiddleware
 
         $headers = [
             'Requested Delivery Date', 'Actual Delivery Date', 'Order Number',
-            'Customer', 'ZIP', 'Sales Person', 'Order Status', 'On Time / Late', 'Days Late', 'Total',
+            'Customer', 'No. of Orders', 'ZIP', 'Sales Person', 'Order Status', 'Confirmation', 'On Time / Late', 'Days Late', 'Total',
         ];
 
         $rows = function () use ($query) {
@@ -350,9 +352,11 @@ class ReportController extends Controller implements HasMiddleware
                     $o->actual_delivery_date?->format('Y-m-d'),
                     $o->order_number,
                     $o->customer?->name,
+                    $o->number_of_orders,
                     $o->zip_code,
                     $o->salesPerson?->name ?? '--',
                     $o->order_status->label(),
+                    $o->confirmation_status?->label(),
                     $o->deliveryPerformance()->label(),
                     $o->daysLate(),
                     $o->grand_total,
@@ -379,10 +383,10 @@ class ReportController extends Controller implements HasMiddleware
             ->createdBetween($from, $to)
             ->when($request->filled('sales_person_id'), fn ($q) => $q->where('sales_person_id', $request->integer('sales_person_id')))
             ->when($request->filled('zip_code'), fn ($q) => $q->where('zip_code', 'like', $request->query('zip_code') . '%'))
-            ->when($request->filled('order_status'), fn ($q) => $q->where('order_status', $request->query('order_status')))
+            ->when($request->filled('order_status'), fn ($q) => $q->whereIn('order_status', OrderStatus::valuesForFilter($request->query('order_status'))))
+            ->when($request->filled('confirmation_status'), fn ($q) => $q->where('confirmation_status', $request->query('confirmation_status')))
             ->when($request->filled('payment_status'), fn ($q) => $q->where('payment_status', $request->query('payment_status')))
-            ->when($request->filled('product'), fn ($q) => $q->whereHas('items', fn ($i) => $i->where('item_name_snapshot', 'like', '%' . $request->query('product') . '%')))
-            ->when($request->filled('category_id'), fn ($q) => $q->whereHas('items.product', fn ($p) => $p->where('category_id', $request->integer('category_id'))));
+            ->when($request->filled('product'), fn ($q) => $q->whereHas('items', fn ($i) => $i->where('item_name_snapshot', 'like', '%' . $request->query('product') . '%')));
     }
 
     /** The delivery report windows on the requested delivery date, not creation. */
@@ -390,7 +394,8 @@ class ReportController extends Controller implements HasMiddleware
     {
         return Order::query()
             ->whereBetween('requested_delivery_date', [$from->toDateString(), $to->toDateString()])
-            ->when($request->filled('order_status'), fn ($q) => $q->where('order_status', $request->query('order_status')))
+            ->when($request->filled('order_status'), fn ($q) => $q->whereIn('order_status', OrderStatus::valuesForFilter($request->query('order_status'))))
+            ->when($request->filled('confirmation_status'), fn ($q) => $q->where('confirmation_status', $request->query('confirmation_status')))
             ->when($request->query('performance') === 'on_time', fn ($q) => $q->whereNotNull('actual_delivery_date')->whereColumn('actual_delivery_date', '<=', 'requested_delivery_date'))
             ->when($request->query('performance') === 'late', fn ($q) => $q->whereNotNull('actual_delivery_date')->whereColumn('actual_delivery_date', '>', 'requested_delivery_date'))
             ->when($request->query('performance') === 'pending', fn ($q) => $q->whereNull('actual_delivery_date'));

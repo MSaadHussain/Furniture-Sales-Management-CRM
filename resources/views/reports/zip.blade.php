@@ -61,6 +61,7 @@
                                 <th class="ta-th">ZIP</th>
                                 <th class="ta-th text-right">Customers</th>
                                 <th class="ta-th text-right">Orders</th>
+                                <th class="ta-th text-right">No. of Orders</th>
                                 <th class="ta-th text-right">Revenue</th>
                                 <th class="ta-th text-right">Avg order</th>
                                 <th class="ta-th text-right">% of orders</th>
@@ -78,6 +79,7 @@
                                     </td>
                                     <td class="ta-td text-right">{{ number_format($row['customers']) }}</td>
                                     <td class="ta-td text-right font-semibold">{{ number_format($row['orders']) }}</td>
+                                    <td class="ta-td text-right font-semibold">{{ number_format($row['no_of_orders']) }}</td>
                                     <td class="ta-td text-right"><x-money :amount="$row['revenue']" /></td>
                                     <td class="ta-td text-right"><x-money :amount="$row['avg_order']" /></td>
                                     <td class="ta-td text-right">

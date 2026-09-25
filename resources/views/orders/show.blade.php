@@ -248,6 +248,33 @@
                     <div class="flex justify-between"><dt class="text-muted">Grand total</dt><dd class="font-bold text-ink dark:text-white"><x-money :amount="$order->grand_total" /></dd></div>
                     <div class="flex justify-between"><dt class="text-muted">Source</dt><dd class="font-semibold text-brand">{{ $order->order_source ?: 'Not specified' }}</dd></div>
                     <div class="flex justify-between"><dt class="text-muted">No. of Orders</dt><dd class="font-semibold text-ink dark:text-white">{{ $order->number_of_orders !== null ? $order->number_of_orders : 'Not specified' }}</dd></div>
+                    {{-- Changed from here rather than the order list: it is the
+                         exception that matters, not something set on every row. --}}
+                    <div class="flex items-center justify-between">
+                        <dt class="text-muted">Confirmation</dt>
+                        <dd>
+                            @can('manage-orders')
+                                <form method="POST" action="{{ route('orders.confirmation', $order) }}" x-data x-ref="confirmForm">
+                                    @csrf
+                                    @method('PATCH')
+                                    <select name="confirmation_status"
+                                            x-on:change="$refs.confirmForm.submit()"
+                                            class="rounded-lg text-xs font-bold px-2.5 py-1 border shadow-xs cursor-pointer focus:ring-1 focus:outline-none {{ $order->confirmation_status?->selectClasses() }}">
+                                        @foreach (\App\Enums\ConfirmationStatus::cases() as $case)
+                                            <option value="{{ $case->value }}" @selected($order->confirmation_status === $case)
+                                                    class="bg-white text-ink dark:bg-boxdark dark:text-white font-semibold">{{ $case->label() }}</option>
+                                        @endforeach
+                                    </select>
+                                </form>
+                            @else
+                                <span class="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-semibold"
+                                      style="background-color: {{ $order->confirmation_status?->color() }}1A; color: {{ $order->confirmation_status?->color() }};">
+                                    <i class="fa-solid {{ $order->confirmation_status?->icon() }} text-[9px]"></i>
+                                    {{ $order->confirmation_status?->label() }}
+                                </span>
+                            @endcan
+                        </dd>
+                    </div>
                     <div class="flex justify-between"><dt class="text-muted">Sales Person</dt><dd class="text-ink dark:text-gray-200">{{ $order->salesPerson?->name ?? 'Not assigned' }}</dd></div>
                     <div class="flex justify-between"><dt class="text-muted">Entered by</dt><dd class="text-ink dark:text-gray-200">{{ $order->creator?->name ?? 'System' }}</dd></div>
                     <div class="flex justify-between"><dt class="text-muted">Last updated by</dt><dd class="text-ink dark:text-gray-200">{{ $order->updater?->name ?? '--' }}</dd></div>

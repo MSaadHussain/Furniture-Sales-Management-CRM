@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\ConfirmationStatus;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
 use App\Models\Category;
@@ -45,6 +46,7 @@ class OrderService
                     : null,
                 'requested_delivery_date' => $data['requested_delivery_date'],
                 'order_status'            => $data['order_status'] ?? OrderStatus::New->value,
+                'confirmation_status'     => $data['confirmation_status'] ?? ConfirmationStatus::DEFAULT->value,
                 'payment_method'          => $data['payment_method'] ?? null,
                 'zip_code'                => $customer->zip_code,
                 'notes'                   => $data['notes'] ?? null,
@@ -125,6 +127,10 @@ class OrderService
 
             if (! empty($data['order_status'])) {
                 $order->order_status = OrderStatus::from($data['order_status']);
+            }
+
+            if (! empty($data['confirmation_status'])) {
+                $order->confirmation_status = ConfirmationStatus::from($data['confirmation_status']);
             }
 
             $order->save();

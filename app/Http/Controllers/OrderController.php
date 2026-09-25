@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\ConfirmationStatus;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
@@ -20,6 +21,7 @@ use App\Support\Money;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Support\Carbon;
+use Illuminate\Validation\Rule;
 
 class OrderController extends Controller implements HasMiddleware
 {
@@ -48,8 +50,18 @@ class OrderController extends Controller implements HasMiddleware
             ->withQueryString();
 
         // Totals for the whole filtered set, not just the visible page.
+        //
+        // The bar has to describe the table below it. `countable()` is no use
+        // here: revenueValues() is only 'delivered', so it made an unfiltered
+        // bar count delivered orders while the list showed everything, and on
+        // top of an explicit status filter it contradicted the filter and read
+        // zero. Instead: honour an explicit filter exactly, and otherwise drop
+        // only the orders that never happened -- which is what the caption says.
         $totals = (clone $this->filtered($request))
-            ->countable()
+            ->when(
+                ! $request->filled('order_status'),
+                fn ($q) => $q->whereNotIn('order_status', OrderStatus::lostValues()),
+            )
             ->selectRaw(
                 'COUNT(*) as orders,'
                 // The operator-entered counter, summed, and how many distinct
@@ -211,6 +223,35 @@ class OrderController extends Controller implements HasMiddleware
         $this->orders->changeStatus($order, $status);
 
         return back()->with('toast', "Order status set to {$status->label()}.");
+    }
+
+    /**
+     * Confirmed / Not Confirmed / Duplicate. Separate from the order status:
+     * this says whether the sale is real, not where the goods are.
+     */
+    public function updateConfirmation(Request $request, Order $order)
+    {
+        $this->authorize('changeStatus', $order);
+
+        $data = $request->validate([
+            'confirmation_status' => ['required', Rule::in(ConfirmationStatus::values())],
+        ]);
+
+        $status = ConfirmationStatus::from($data['confirmation_status']);
+        $before = $order->getAttributes();
+
+        $order->confirmation_status = $status;
+        $order->updated_by          = $request->user()->id;
+        $order->save();
+
+        $this->audit->logChanges(
+            'order.confirmation_changed',
+            $order,
+            $before,
+            "Order {$order->order_number} marked {$status->label()}",
+        );
+
+        return back()->with('toast', "Order marked {$status->label()}.");
     }
 
     public function updatePayment(Request $request, Order $order)
@@ -419,7 +460,7 @@ class OrderController extends Controller implements HasMiddleware
     private function filterKeys(): array
     {
         return [
-            'search', 'order_status', 'payment_status', 'sales_person_id',
+            'search', 'order_status', 'confirmation_status', 'payment_status', 'sales_person_id',
             'zip_code', 'category_id', 'from', 'to', 'delivery_from', 'delivery_to', 'performance',
             'sort', 'direction',
         ];
@@ -493,7 +534,8 @@ class OrderController extends Controller implements HasMiddleware
     {
         return Order::query()
             ->search($request->query('search'))
-            ->when($request->filled('order_status'), fn ($q) => $q->where('order_status', $request->query('order_status')))
+            ->when($request->filled('order_status'), fn ($q) => $q->whereIn('order_status', OrderStatus::valuesForFilter($request->query('order_status'))))
+            ->when($request->filled('confirmation_status'), fn ($q) => $q->where('confirmation_status', $request->query('confirmation_status')))
             ->when($request->filled('payment_status'), fn ($q) => $q->where('payment_status', $request->query('payment_status')))
             ->when($request->filled('sales_person_id'), fn ($q) => $q->where('sales_person_id', $request->integer('sales_person_id')))
             ->when($request->filled('zip_code'), fn ($q) => $q->where('zip_code', 'like', $request->query('zip_code') . '%'))

@@ -255,6 +255,8 @@
                         <tr>
                             <th class="ta-th">Sales Person</th>
                             <th class="ta-th text-right">Orders</th>
+                            {{-- Across every order on the row, not just the delivered ones. --}}
+                            <th class="ta-th text-right">No. of Orders</th>
                             <th class="ta-th text-right">Delivered</th>
                             <th class="ta-th text-right">Cancelled</th>
                             <th class="ta-th text-right">In Progress</th>
@@ -267,6 +269,7 @@
                             <tr class="transition hover:bg-surface dark:hover:bg-boxdark/50">
                                 <td class="ta-td font-medium">{{ $row->name }}</td>
                                 <td class="ta-td text-right text-muted">{{ number_format($row->total) }}</td>
+                                <td class="ta-td text-right font-semibold">{{ number_format($row->no_of_orders_all) }}</td>
                                 <td class="ta-td text-right font-semibold text-emerald-600">{{ number_format($row->delivered) }}</td>
                                 <td class="ta-td text-right font-semibold {{ $row->lost > 0 ? 'text-danger' : 'text-muted' }}">
                                     {{ number_format($row->lost) }}
@@ -307,6 +310,7 @@
                         <tr>
                             <td class="ta-td font-bold">Team total</td>
                             <td class="ta-td text-right font-bold">{{ number_format($team['total']) }}</td>
+                            <td class="ta-td text-right font-bold">{{ number_format($team['no_of_orders_all']) }}</td>
                             <td class="ta-td text-right font-bold text-emerald-600">{{ number_format($team['delivered']) }}</td>
                             <td class="ta-td text-right font-bold text-danger">{{ number_format($team['lost']) }}</td>
                             <td class="ta-td text-right font-bold text-muted">{{ number_format($team['in_progress']) }}</td>

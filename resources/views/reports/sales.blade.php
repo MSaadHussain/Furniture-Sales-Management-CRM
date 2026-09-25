@@ -47,17 +47,6 @@
                 <input type="text" name="product" value="{{ $filters['product'] ?? '' }}" class="ta-input" placeholder="e.g. Sofa">
             </div>
             <div>
-                <label class="ta-label">Category</label>
-                <select name="category_id" class="ta-input">
-                    <option value="">All</option>
-                    @foreach ($categories as $category)
-                        <option value="{{ $category->id }}" @selected((int) ($filters['category_id'] ?? 0) === $category->id)>
-                            {{ $category->name }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
-            <div>
                 <label class="ta-label">ZIP code</label>
                 <input type="text" name="zip_code" value="{{ $filters['zip_code'] ?? '' }}" class="ta-input">
             </div>
@@ -65,10 +54,19 @@
                 <label class="ta-label">Order status</label>
                 <select name="order_status" class="ta-input">
                     <option value="">All</option>
-                    @foreach ($orderStatuses as $status)
-                        <option value="{{ $status->value }}" @selected(($filters['order_status'] ?? '') === $status->value)>
-                            {{ $status->label() }}
-                        </option>
+                    {{-- label() collapses nine statuses into three, so listing the
+                         cases showed "Pending" six times. One option per label. --}}
+                    @foreach (\App\Enums\OrderStatus::filterGroups() as $key => $group)
+                        <option value="{{ $key }}" @selected(($filters['order_status'] ?? '') === $key)>{{ $group['label'] }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div>
+                <label class="ta-label">Confirmation</label>
+                <select name="confirmation_status" class="ta-input">
+                    <option value="">All</option>
+                    @foreach (\App\Enums\ConfirmationStatus::cases() as $case)
+                        <option value="{{ $case->value }}" @selected(($filters['confirmation_status'] ?? '') === $case->value)>{{ $case->label() }}</option>
                     @endforeach
                 </select>
             </div>
@@ -96,6 +94,7 @@
                             <th class="ta-th">Sales Person</th>
                             <th class="ta-th text-right">Total</th>
                             <th class="ta-th">Status</th>
+                            <th class="ta-th">Confirmation</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-line dark:divide-strokedark">
@@ -114,6 +113,13 @@
                                 <td class="ta-td">{{ $order->salesPerson?->name ?? '--' }}</td>
                                 <td class="ta-td text-right font-semibold"><x-money :amount="$order->grand_total" /></td>
                                 <td class="ta-td"><x-status-pill :status="$order->order_status" /></td>
+                                <td class="ta-td">
+                                    <span class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold whitespace-nowrap"
+                                          style="background-color: {{ $order->confirmation_status?->color() }}1A; color: {{ $order->confirmation_status?->color() }};">
+                                        <i class="fa-solid {{ $order->confirmation_status?->icon() }} text-[9px]"></i>
+                                        {{ $order->confirmation_status?->label() }}
+                                    </span>
+                                </td>
                             </tr>
                         @endforeach
                     </tbody>

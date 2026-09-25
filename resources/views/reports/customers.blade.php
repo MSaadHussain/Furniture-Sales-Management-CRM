@@ -35,6 +35,7 @@
                                 <th class="ta-th">Phone</th>
                                 <th class="ta-th">ZIP</th>
                                 <th class="ta-th text-right">Orders</th>
+                                <th class="ta-th text-right">No. of Orders</th>
                                 <th class="ta-th text-right">Total spend</th>
                                 <th class="ta-th">Last order</th>
                             </tr>
@@ -50,6 +51,7 @@
                                     <td class="ta-td">{{ $row->phone }}</td>
                                     <td class="ta-td font-semibold">{{ $row->zip_code }}</td>
                                     <td class="ta-td text-right">{{ number_format($row->orders) }}</td>
+                                    <td class="ta-td text-right font-semibold">{{ number_format($row->no_of_orders) }}</td>
                                     <td class="ta-td text-right font-semibold"><x-money :amount="$row->revenue" /></td>
                                     <td class="ta-td text-muted">
                                         {{ \Illuminate\Support\Carbon::parse($row->last_order_at)->format('d M Y') }}

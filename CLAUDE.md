@@ -14,7 +14,7 @@ php artisan migrate:fresh --seed   # full reset with 12 months of sample data
 php artisan migrate                # incremental
 npm install && npm run build       # frontend assets
 php artisan serve                  # http://localhost:8000
-php artisan test                   # 209 tests
+php artisan test                   # 234 tests
 ```
 
 ## Seeded Accounts (local only)
@@ -114,7 +114,21 @@ plus a composite `(requested_delivery_date, order_status)` for the daily deliver
 | OrderStatus         | new, confirmed, processing, ready_for_delivery, out_for_delivery, delivered, cancelled, delayed, returned |
 | PaymentStatus       | pending, partial, paid, refunded |
 | PaymentMethod       | cash, bank_transfer, card, online, other |
+| ConfirmationStatus  | confirmed, not_confirmed, duplicate (labelled Confirm / Not Confirm / Duplicate) |
 | DeliveryPerformance | on_time, late, pending (derived, never stored) |
+
+`OrderStatus::filterGroups()` is what a status dropdown should loop: `label()`
+collapses the nine cases into three, so listing the cases shows "Pending" six times.
+`OrderStatus::valuesForFilter()` turns the chosen group back into the statuses to
+match, and still accepts a raw status for older links.
+
+`orders.confirmation_status` is a label only — Confirm / Not Confirm / Duplicate. It
+records whether the sale is real, independent of `order_status` (where the goods are),
+and **no revenue, report or delivery rule reads it**. It defaults to **Confirm**: an
+order is real unless someone marks it otherwise, so the flag only ever marks the
+exceptions. Deliberately **not** a column on the order list — it is set from the order
+form or the order detail page, and shown as a column on the Sales and Delivery reports.
+Both those reports and the order list can filter on it.
 
 `OrderStatus::revenueValues()` excludes cancelled + returned — every revenue aggregate
 uses the `Order::scopeCountable()` built on it. `OrderStatus::openValues()` drives the
@@ -129,7 +143,7 @@ delivery board and overdue counts.
 | OrderService           | Create/update orders, recalculate every total server-side, resolve or reuse the customer, sync snapshotted items, status/payment/delivery/cancel transitions |
 | OrderNumberService     | `SALE-2026-000001`; sequential per year, locked, never reused (includes soft-deleted orders) |
 | DeliveryService        | Daily board, month calendar counts, on-time performance, overdue/pending counts, 7-day outlook |
-| SalesAnalyticsService  | KPIs with growth, trend buckets (day/week/month), top products, categories, colour demand, sales-person performance (including the summed `number_of_orders` counter), customer stats |
+| SalesAnalyticsService  | KPIs with growth, trend buckets (day/week/month), top products, categories, colour demand, sales-person performance and fulfilment, customer stats. Both carry a summed `number_of_orders`: `no_of_orders` over delivered orders (matching `orders`/revenue), `no_of_orders_all` over every order (matching `total`) |
 | ZipAnalyticsService    | ZIP ranking with share + growth, quiet areas, per-ZIP product mix, marketing insights |
 | DateRangeService       | The 10 date presets, previous-period resolution (whole month → previous whole month), growth maths with `N/A` on a zero baseline |
 | AuditService           | Audit trail with before/after diffing and redaction of secrets |
@@ -221,6 +235,13 @@ figures are display only. Data reaches Alpine via `Js::from()`.
 - **Products/categories with history are deactivated, not deleted.**
 - **Aggregate SQL only.** Reports never pull rows into PHP to count them; filtering and
   pagination are server-side.
+- **`OrderStatus::revenueValues()` is just `delivered`**, so `scopeCountable()` means
+  "delivered only", not "everything but cancelled" — use `OrderStatus::lostValues()`
+  when you want the latter. A KPI bar sitting above a list must describe that list:
+  the order list honours an explicit status filter exactly and otherwise drops only
+  the lost statuses (see `OrderController::index()`). Applying `countable()` there
+  counted delivered orders under a list of pending ones, and contradicted the filter
+  outright when one was set.
 - **Date presets come from `DateRangeService::presets()`.** The `x-date-range`
   component slices its button lists out of that array rather than listing keys of
   its own — a hand-written list drifted once ('last_7_days' vs `last_7`) and those
@@ -243,6 +264,7 @@ figures are display only. Data reaches Alpine via `Js::from()`.
 | UserManagementTest        | Registration, hashing, active-seller rule, last-admin guard |
 | ProfileTest, Auth/*       | Self-service profile and Breeze auth |
 | GoogleSheetSyncTest       | Dirty tracking, backfill, upsert payloads, deletions, request signing, retry on failure |
+| ConfirmationStatusTest    | Confirm / Not Confirm / Duplicate: default, inline change, validation, audit, permissions, and that it changes nothing else |
 | CustomerIdentityOnOrderEditTest | Changing the phone on an order moves it to another/new customer instead of rewriting the shared record |
 | NumberOfOrdersReportingTest | The "No. of Orders" counter summed per sales person and per period, in both reports and their exports |
 | OrderListTotalsAndDateRangeTest | The order list KPI bar (summed counter, distinct customers, seller filter) and that every date preset the UI offers is one the service accepts |

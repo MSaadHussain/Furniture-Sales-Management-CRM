@@ -50,6 +50,7 @@ class ZipAnalyticsService
             return [
                 'zip_code'       => $row->zip_code,
                 'orders'         => (int) $row->orders,
+                'no_of_orders'   => (int) $row->no_of_orders,
                 'revenue'        => (float) $row->revenue,
                 'customers'      => (int) $row->customers,
                 'avg_order'      => $row->orders > 0 ? round(((float) $row->revenue) / (int) $row->orders, 2) : 0.0,
@@ -75,6 +76,8 @@ class ZipAnalyticsService
             ->where('zip_code', '<>', '')
             ->selectRaw('zip_code')
             ->selectRaw('COUNT(*) as orders')
+            // The operator-entered "No. of Orders" on each order, summed.
+            ->selectRaw('COALESCE(SUM(number_of_orders), 0) as no_of_orders')
             ->selectRaw('COALESCE(SUM(grand_total), 0) as revenue')
             ->selectRaw('COUNT(DISTINCT customer_id) as customers')
             ->groupBy('zip_code')

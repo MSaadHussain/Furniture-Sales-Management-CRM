@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\ConfirmationStatus;
 use App\Enums\DeliveryPerformance;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentMethod;
@@ -23,8 +24,16 @@ class Order extends Model
         'order_created_at', 'requested_delivery_date', 'actual_delivery_date',
         'subtotal', 'discount', 'delivery_charge', 'tax', 'grand_total',
         'payment_status', 'payment_method', 'amount_paid', 'balance_due',
-        'order_status', 'zip_code', 'notes', 'cancellation_reason',
+        'order_status', 'confirmation_status', 'zip_code', 'notes', 'cancellation_reason',
         'created_by', 'updated_by',
+    ];
+
+    /**
+     * Mirrors the column default, so a freshly made Order already carries a
+     * confirmation status instead of reading null until it is reloaded.
+     */
+    protected $attributes = [
+        'confirmation_status' => 'confirmed',
     ];
 
     protected function casts(): array
@@ -42,6 +51,7 @@ class Order extends Model
             'amount_paid'             => 'decimal:2',
             'balance_due'             => 'decimal:2',
             'order_status'            => OrderStatus::class,
+            'confirmation_status'     => ConfirmationStatus::class,
             'payment_status'          => PaymentStatus::class,
             'payment_method'          => PaymentMethod::class,
         ];
