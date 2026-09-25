@@ -14,7 +14,7 @@ php artisan migrate:fresh --seed   # full reset with 12 months of sample data
 php artisan migrate                # incremental
 npm install && npm run build       # frontend assets
 php artisan serve                  # http://localhost:8000
-php artisan test                   # 103 tests
+php artisan test                   # 209 tests
 ```
 
 ## Seeded Accounts (local only)
@@ -221,6 +221,10 @@ figures are display only. Data reaches Alpine via `Js::from()`.
 - **Products/categories with history are deactivated, not deleted.**
 - **Aggregate SQL only.** Reports never pull rows into PHP to count them; filtering and
   pagination are server-side.
+- **Date presets come from `DateRangeService::presets()`.** The `x-date-range`
+  component slices its button lists out of that array rather than listing keys of
+  its own — a hand-written list drifted once ('last_7_days' vs `last_7`) and those
+  buttons silently fell back to the default range.
 - **Flash messages**: `session('toast')` for success, `session('error')` for failures.
 - **CSS classes**: `ta-card`, `ta-input`, `ta-label`, `ta-th`, `ta-td`, `ta-nav-link`,
   `ta-nav-sub`, `ta-badge`, `btn btn-primary`, `btn btn-light`, `btn btn-danger`.
@@ -241,6 +245,7 @@ figures are display only. Data reaches Alpine via `Js::from()`.
 | GoogleSheetSyncTest       | Dirty tracking, backfill, upsert payloads, deletions, request signing, retry on failure |
 | CustomerIdentityOnOrderEditTest | Changing the phone on an order moves it to another/new customer instead of rewriting the shared record |
 | NumberOfOrdersReportingTest | The "No. of Orders" counter summed per sales person and per period, in both reports and their exports |
+| OrderListTotalsAndDateRangeTest | The order list KPI bar (summed counter, distinct customers, seller filter) and that every date preset the UI offers is one the service accepts |
 
 The suite runs against **MySQL** (`crmapp_test`), not SQLite, because the reports use
 `DATE_FORMAT`, `FIELD`, `DATEDIFF` and `GREATEST`. See `phpunit.xml`.

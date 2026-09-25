@@ -5,19 +5,12 @@
 ])
 
 @php
-    $mainPresets = [
-        'today'      => 'Today',
-        'this_week'  => 'This Week',
-        'this_month' => 'This Month',
-    ];
-    $morePresets = [
-        'yesterday'     => 'Yesterday',
-        'last_7_days'   => 'Last 7 Days',
-        'last_month'    => 'Last Month',
-        'last_3_months' => 'Last 3 Months',
-        'last_6_months' => 'Last 6 Months',
-        'this_year'     => 'This Year',
-    ];
+    // Both lists are sliced out of the presets the service actually accepts.
+    // They used to be hand-written here, and the keys had drifted
+    // ('last_7_days' vs the service's 'last_7'), so those buttons silently fell
+    // back to the default range. Deriving them keeps the two in step.
+    $mainPresets  = array_intersect_key($presets, array_flip(['today', 'this_week', 'this_month']));
+    $morePresets  = array_diff_key($presets, $mainPresets, ['custom' => '']);
     $isMoreActive = array_key_exists($range['preset'], $morePresets);
 @endphp
 

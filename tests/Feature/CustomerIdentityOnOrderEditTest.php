@@ -49,6 +49,7 @@ class CustomerIdentityOnOrderEditTest extends TestCase
             'customer_city'           => 'Paris',
             'customer_zip_code'       => '75013',
             'requested_delivery_date' => today()->addDays(5)->toDateString(),
+            'number_of_orders'        => 1,
             'payment_status'          => PaymentStatus::Pending->value,
             'order_source'            => 'Showroom Walk-in',
             'discount'                => 0,

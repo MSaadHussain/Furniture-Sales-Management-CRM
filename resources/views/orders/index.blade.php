@@ -16,7 +16,7 @@
 <div class="space-y-3">
 
     {{-- ========================= Compact Top KPI Bar ========================= --}}
-    <div class="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
+    <div class="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         <div class="flex items-center justify-between rounded-xl border border-line bg-white px-3.5 py-2.5 shadow-xs dark:border-strokedark dark:bg-boxdark">
             <div class="flex items-center gap-2.5">
                 <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-brand/10 text-brand text-xs">
@@ -28,6 +28,35 @@
                 </div>
             </div>
             <span class="text-[10px] text-muted">Excl. cancelled</span>
+        </div>
+
+        {{-- The counter typed on each order, summed over whatever is filtered. --}}
+        <div class="flex items-center justify-between rounded-xl border border-line bg-white px-3.5 py-2.5 shadow-xs dark:border-strokedark dark:bg-boxdark">
+            <div class="flex items-center gap-2.5">
+                <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-500/10 text-purple-600 text-xs">
+                    <i class="fa-solid fa-list-ol"></i>
+                </span>
+                <div>
+                    <span class="text-[11px] font-bold text-muted block leading-tight">No. of Orders</span>
+                    <span class="text-base font-black text-ink dark:text-white leading-tight">{{ number_format($totals->no_of_orders ?? 0) }}</span>
+                </div>
+            </div>
+            <span class="text-[10px] text-muted">Entered total</span>
+        </div>
+
+        {{-- Distinct customers behind those orders. Filter by a seller and this
+             answers how many customers are theirs. --}}
+        <div class="flex items-center justify-between rounded-xl border border-line bg-white px-3.5 py-2.5 shadow-xs dark:border-strokedark dark:bg-boxdark">
+            <div class="flex items-center gap-2.5">
+                <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-500/10 text-sky-600 text-xs">
+                    <i class="fa-solid fa-users"></i>
+                </span>
+                <div>
+                    <span class="text-[11px] font-bold text-muted block leading-tight">Customers</span>
+                    <span class="text-base font-black text-ink dark:text-white leading-tight">{{ number_format($totals->customers ?? 0) }}</span>
+                </div>
+            </div>
+            <span class="text-[10px] text-muted">Unique</span>
         </div>
 
         <div class="flex items-center justify-between rounded-xl border border-line bg-white px-3.5 py-2.5 shadow-xs dark:border-strokedark dark:bg-boxdark">

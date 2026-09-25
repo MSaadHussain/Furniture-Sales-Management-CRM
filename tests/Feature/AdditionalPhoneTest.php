@@ -89,6 +89,8 @@ class AdditionalPhoneTest extends TestCase
             'customer_phone_alt'      => '+92 321 7777777',
             'customer_zip_code'       => '54000',
             'requested_delivery_date' => today()->addDays(3)->toDateString(),
+            'number_of_orders'        => 1,
+            'order_source'            => 'Showroom Walk-in',
             'items' => [
                 ['product_id' => $product->id, 'quantity' => 1, 'unit_price' => 50000, 'discount' => 0],
             ],
@@ -116,6 +118,8 @@ class AdditionalPhoneTest extends TestCase
             'customer_phone'          => $customer->phone,
             'customer_zip_code'       => $customer->zip_code,
             'requested_delivery_date' => today()->addDays(3)->toDateString(),
+            'number_of_orders'        => 1,
+            'order_source'            => 'Showroom Walk-in',
             'items' => [
                 ['product_id' => $product->id, 'quantity' => 1, 'unit_price' => 50000, 'discount' => 0],
             ],

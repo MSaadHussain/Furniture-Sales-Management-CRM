@@ -50,7 +50,16 @@ class OrderController extends Controller implements HasMiddleware
         // Totals for the whole filtered set, not just the visible page.
         $totals = (clone $this->filtered($request))
             ->countable()
-            ->selectRaw('COUNT(*) as orders, COALESCE(SUM(grand_total), 0) as revenue, COALESCE(SUM(balance_due), 0) as outstanding')
+            ->selectRaw(
+                'COUNT(*) as orders,'
+                // The operator-entered counter, summed, and how many distinct
+                // customers the filtered set covers -- so filtering by a seller
+                // answers "how many customers and how many orders are theirs".
+                . ' COALESCE(SUM(number_of_orders), 0) as no_of_orders,'
+                . ' COUNT(DISTINCT customer_id) as customers,'
+                . ' COALESCE(SUM(grand_total), 0) as revenue,'
+                . ' COALESCE(SUM(balance_due), 0) as outstanding'
+            )
             ->first();
 
         return view('orders.index', [

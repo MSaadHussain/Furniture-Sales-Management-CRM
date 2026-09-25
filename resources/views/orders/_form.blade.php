@@ -318,10 +318,12 @@
                 {{-- No. of Orders: a plain reference number the user types in.
                      It is not a quantity and feeds nothing else. --}}
                 <div class="sm:col-span-2">
-                    <label class="text-base font-semibold text-slate-500 dark:text-white block mb-1">No. of Orders</label>
-                    <input type="number" name="number_of_orders" min="0" max="999999" step="1"
+                    <label class="text-base font-semibold text-slate-500 dark:text-white block mb-1">No. of Orders <span class="text-danger">*</span></label>
+                    {{-- Starts at 1: the common case, and it keeps the field from
+                         being left blank now that it is required. --}}
+                    <input type="number" name="number_of_orders" min="0" max="999999" step="1" required
                            inputmode="numeric" placeholder="e.g. 1"
-                           value="{{ old('number_of_orders', $order->number_of_orders) }}"
+                           value="{{ old('number_of_orders', $order->number_of_orders ?? 1) }}"
                            class="ta-input !py-2 font-semibold @error('number_of_orders') !border-danger @enderror">
                     @error('number_of_orders')<p class="mt-1 text-sm text-danger">{{ $message }}</p>@enderror
                 </div>

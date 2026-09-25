@@ -97,6 +97,8 @@ class OrderFormLayoutTest extends TestCase
             'customer_phone'          => '+92 300 1234567',
             'customer_zip_code'       => '54000',
             'requested_delivery_date' => today()->addDays(5)->toDateString(),
+            'number_of_orders'        => 1,
+            'order_source'            => 'Showroom Walk-in',
             'payment_status'          => 'pending',
             'items' => [
                 ['product_id' => $product->id, 'quantity' => 1, 'unit_price' => 50000, 'discount' => 0],

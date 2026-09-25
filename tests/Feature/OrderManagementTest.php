@@ -50,6 +50,7 @@ class OrderManagementTest extends TestCase
             'customer_city'           => 'Lahore',
             'customer_zip_code'       => '54000',
             'requested_delivery_date' => today()->addDays(10)->toDateString(),
+            'number_of_orders'        => 1,
             'payment_status'          => PaymentStatus::Pending->value,
             'delivery_charge'         => 2500,
             'discount'                => 0,
@@ -240,6 +241,7 @@ class OrderManagementTest extends TestCase
 
         $this->actingAs($this->admin)->post(route('orders.store'), $this->payload([
             'requested_delivery_date' => $requested->toDateString(),
+            'number_of_orders'        => 1,
         ]));
 
         $order = Order::firstOrFail();
@@ -321,6 +323,7 @@ class OrderManagementTest extends TestCase
 
         $this->actingAs($this->admin)->put(route('orders.update', $order), $this->payload([
             'requested_delivery_date' => today()->addDays(20)->toDateString(),
+            'number_of_orders'        => 1,
         ]));
 
         $this->assertDatabaseHas('audit_logs', [
@@ -409,6 +412,33 @@ class OrderManagementTest extends TestCase
             ->get(route('orders.create'))
             ->assertOk()
             ->assertSee('Interior Designer Expo 2026');
+    }
+
+    public function test_number_of_orders_is_required(): void
+    {
+        $this->actingAs($this->admin)
+            ->post(route('orders.store'), $this->payload(['number_of_orders' => '']))
+            ->assertSessionHasErrors('number_of_orders');
+    }
+
+    public function test_the_create_form_starts_number_of_orders_at_one(): void
+    {
+        $html = $this->actingAs($this->admin)->get(route('orders.create'))->assertOk()->getContent();
+
+        $this->assertMatchesRegularExpression('/name="number_of_orders"[^>]*required/s', $html);
+        $this->assertMatchesRegularExpression('/name="number_of_orders"[^>]*value="1"/s', $html);
+    }
+
+    /** Orders entered before the field existed open with 1 rather than blank. */
+    public function test_editing_an_older_order_offers_one_rather_than_an_empty_box(): void
+    {
+        $this->actingAs($this->admin)->post(route('orders.store'), $this->payload());
+        $order = Order::firstOrFail();
+        $order->forceFill(['number_of_orders' => null])->save();
+
+        $html = $this->actingAs($this->admin)->get(route('orders.edit', $order))->assertOk()->getContent();
+
+        $this->assertMatchesRegularExpression('/name="number_of_orders"[^>]*value="1"/s', $html);
     }
 
     public function test_order_source_is_required(): void

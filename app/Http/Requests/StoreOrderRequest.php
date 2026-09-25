@@ -72,8 +72,9 @@ class StoreOrderRequest extends FormRequest
             'delivery_charge'         => ['nullable', 'numeric', 'min:0'],
             'tax'                     => ['nullable', 'numeric', 'min:0'],
             'order_source'            => ['required', 'string', 'max:100'],
-            // Free-standing informational counter (not a quantity).
-            'number_of_orders'        => ['nullable', 'integer', 'min:0', 'max:999999'],
+            // Free-standing informational counter (not a quantity). Required,
+            // and the form starts it at 1, so it is never silently left blank.
+            'number_of_orders'        => ['required', 'integer', 'min:0', 'max:999999'],
             'notes'                   => ['nullable', 'string', 'max:2000'],
         ];
     }
@@ -104,6 +105,9 @@ class StoreOrderRequest extends FormRequest
             'sales_person_id.required'    => 'A Sales Person must be assigned to the order.',
             'sales_person_id.exists'      => 'The selected Sales Person must be an active sales representative.',
             'order_source.required'       => 'The Source of Order is required.',
+            'number_of_orders.required'   => 'No. of Orders is required.',
+            'number_of_orders.integer'    => 'No. of Orders must be a whole number.',
+            'number_of_orders.min'        => 'No. of Orders cannot be negative.',
             'requested_delivery_date.after_or_equal' => 'The requested delivery date must be today or later.',
         ];
     }
